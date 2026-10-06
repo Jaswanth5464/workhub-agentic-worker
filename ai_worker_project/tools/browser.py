@@ -320,9 +320,11 @@ class BrowserTool(Tool):
                 
                 const rect = element.getBoundingClientRect();
                 const colors = {
-                    'click': { border: '#00E5FF', bg: 'rgba(0, 229, 255, 0.22)', badge: '#00B4D8', text: '#FFFFFF', icon: '👆' },
-                    'type': { border: '#FFD700', bg: 'rgba(255, 215, 0, 0.22)', badge: '#D97706', text: '#FFFFFF', icon: '✍️' },
-                    'select': { border: '#10B981', bg: 'rgba(16, 185, 129, 0.22)', badge: '#059669', text: '#FFFFFF', icon: '🔽' }
+                    'click': { border: '#00E5FF', bg: 'rgba(0, 229, 255, 0.25)', badge: '#00B4D8', text: '#FFFFFF', icon: '👆' },
+                    'type': { border: '#FFD700', bg: 'rgba(255, 215, 0, 0.25)', badge: '#D97706', text: '#FFFFFF', icon: '✍️' },
+                    'select': { border: '#10B981', bg: 'rgba(16, 185, 129, 0.25)', badge: '#059669', text: '#FFFFFF', icon: '🔽' },
+                    'toggle': { border: '#8B5CF6', bg: 'rgba(139, 92, 246, 0.25)', badge: '#7C3AED', text: '#FFFFFF', icon: '☑️' },
+                    'clear': { border: '#EF4444', bg: 'rgba(239, 68, 68, 0.25)', badge: '#DC2626', text: '#FFFFFF', icon: '🧹' }
                 };
                 const theme = colors[actionType] || colors['click'];
                 
@@ -333,14 +335,14 @@ class BrowserTool(Tool):
                     position: fixed;
                     left: ${Math.max(0, rect.left - 4)}px;
                     top: ${Math.max(0, rect.top - 4)}px;
-                    width: ${rect.width + 8}px;
-                    height: ${rect.height + 8}px;
+                    width: ${Math.max(20, rect.width + 8)}px;
+                    height: ${Math.max(20, rect.height + 8)}px;
                     border: 3px solid ${theme.border};
                     background: ${theme.bg};
                     border-radius: 6px;
                     pointer-events: none;
                     z-index: 999999;
-                    box-shadow: 0 0 16px ${theme.border};
+                    box-shadow: 0 0 18px ${theme.border};
                     transition: all 0.2s ease-out;
                     animation: aiPulse 0.5s infinite alternate;
                 `;
@@ -362,7 +364,7 @@ class BrowserTool(Tool):
                     border-radius: 20px;
                     pointer-events: none;
                     z-index: 1000000;
-                    box-shadow: 0 4px 12px rgba(0,0,0,0.35);
+                    box-shadow: 0 4px 14px rgba(0,0,0,0.35);
                     display: flex;
                     align-items: center;
                     gap: 4px;
@@ -375,8 +377,8 @@ class BrowserTool(Tool):
                     style.id = 'ai-indicator-styles';
                     style.textContent = `
                         @keyframes aiPulse {
-                            0% { transform: scale(1); opacity: 0.9; }
-                            100% { transform: scale(1.03); opacity: 1; box-shadow: 0 0 24px rgba(0,229,255,0.85); }
+                            0% { transform: scale(1); opacity: 0.85; }
+                            100% { transform: scale(1.03); opacity: 1; box-shadow: 0 0 24px rgba(0,229,255,0.9); }
                         }
                         @keyframes aiSlideDown {
                             from { transform: translateY(-6px); opacity: 0; }
@@ -390,14 +392,23 @@ class BrowserTool(Tool):
                 document.body.appendChild(badge);
             }
             """
-            await page.evaluate(js, [el, action_type, label_text[:35]])
-            await asyncio.sleep(0.35)
+            await page.evaluate(js, [el, action_type, str(label_text)[:35]])
+            await asyncio.sleep(0.3)
         except Exception:
             pass
 
     async def _hide_visual_indicator(self, page):
+        """Fades out and removes visual indicators."""
         try:
-            await page.evaluate("() => document.querySelectorAll('.ai-visual-indicator-badge, .ai-visual-indicator-ring').forEach(e => e.remove())")
+            await page.evaluate("""
+                () => {
+                    document.querySelectorAll('.ai-visual-indicator-badge, .ai-visual-indicator-ring').forEach(e => {
+                        e.style.opacity = '0';
+                        setTimeout(() => e.remove(), 200);
+                    });
+                }
+            """)
+            await asyncio.sleep(0.15)
         except Exception:
             pass
 
