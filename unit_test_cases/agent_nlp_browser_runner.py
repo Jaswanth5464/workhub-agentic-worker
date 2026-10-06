@@ -14,6 +14,10 @@ For every command:
   4. It prints the live thought trace, actions, and verified final answer.
 ========================================================================================
 """
+import os
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
 import os
 import sys

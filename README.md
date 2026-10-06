@@ -784,7 +784,7 @@ python -m unittest unit_test_cases/test_all_features.py
 python unit_test_cases/test_workhub_scenarios.py
 
 # 3. Run the Master Interactive Test Controller:
-python run_all_test_suites.py
+python unit_test_cases/run_all_test_suites.py
 ```
 
 ---

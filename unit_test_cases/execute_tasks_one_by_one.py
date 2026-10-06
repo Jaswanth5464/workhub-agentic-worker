@@ -9,6 +9,10 @@ Executes AI Worker tasks one by one with live console output, showing:
   - Real-Time Audit Log Entry Recorded
 ========================================================================================
 """
+import os
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
 import os
 import sys
