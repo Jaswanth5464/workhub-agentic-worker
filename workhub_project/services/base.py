@@ -9,7 +9,7 @@ class BaseService:
     def __init__(self, repository: BaseRepository):
         self.repository = repository
 
-    def get_all(self, limit: int = 20, filters: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+    def get_all(self, limit: int = 1000, filters: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
         return self.repository.get_all(limit=limit, filters=filters)
 
     def search(self, query: Optional[str] = None, filters: Optional[Dict[str, Any]] = None, limit: int = 10) -> List[Dict[str, Any]]:

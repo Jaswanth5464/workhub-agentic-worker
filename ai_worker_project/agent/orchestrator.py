@@ -127,7 +127,7 @@ class Orchestrator:
 
             final_answer = await agent.run(
                 run.task_description,
-                max_steps=40, # Replaced contract budget with static default
+                max_steps=getattr(run, 'max_steps', 100) or 100,
                 base_contract=None,
                 emit_cb=on_step,
                 approval_queue=approval_queue,  # pass queue to loop (fix #2)
@@ -208,6 +208,16 @@ class Orchestrator:
         if run:
             run.status = "running"
             self.save_run(run)
+            self._emit_event(run_id, {
+                "type": "approval_resolved",
+                "run_id": run_id,
+                "approved": approved,
+                "user_response": user_response
+            })
+            self._emit_event(run_id, {
+                "type": "state",
+                "state": "EXECUTING"
+            })
         return True
 
     def cancel_run(self, run_id: str) -> bool:

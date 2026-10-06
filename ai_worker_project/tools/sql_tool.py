@@ -106,11 +106,6 @@ class SQLQueryTool(Tool):
                         return ToolResult(success=False, error="Safety violation: Mutating queries require human approval.")
                     conn.commit()
                     rows_affected = c.rowcount
-                    try:
-                        from workhub_project.database.db_utils import sync_sqlite_to_mockdata
-                        sync_sqlite_to_mockdata()
-                    except Exception:
-                        pass
                     return ToolResult(success=True, data={"message": f"Successfully executed. Rows affected: {rows_affected}"})
                 else:
                     rows = c.fetchall()

@@ -96,145 +96,402 @@ When finished and verified, use the "finish" tool:
     }
 }
 
-CRITICAL INSTRUCTION - TOOL CALLING & SECURITY GUARDS:
-1. When performing database operations or actions (e.g. creating/updating employees, tasks, expenses, leaves, documents, or running SQL queries), ALWAYS call the real tool directly (e.g. `create_employee`, `sql_query`, `update_expense`, `create_task`, `update_leave`).
-2. NEVER invent or call fake tools like 'approval_required'. Our automated security guard automatically intercepts write and mutation operations and prompts the human operator for authorization on your behalf.
-3. If you need to ask the human operator a clarifying question or request specific user input, use the 'ask_user' tool with {"question": "..."}.
-4. COMPANY MEMORY: If you ask the human a question and they provide an answer or a rule, you MUST use the 'memorize_fact' tool to save that rule so you never have to ask it again in future runs!
+CRITICAL INSTRUCTION - TOOL CALLING, WEB AUTOMATION & SECURITY GUARDS:
+1. STRICT WEB AUTOMATION MODE: When the user prompt requests web automation, mentions a URL (e.g. "open http://...", "navigate to http://..."), or asks to perform actions in the browser, you MUST execute ALL steps PURELY via the `browser` tool. You must NOT fallback to SQL queries unless the browser tool returns a fatal crash.
+2. WORKHUB UI INTERACTION PATTERNS:
+   - Creating a Task via UI:
+     1. Click "New Task" button (`#btn-new-task`).
+     2. Type title into `#new-tsk-title`.
+     3. Select assignee from `#new-tsk-assign` and priority from `#new-tsk-priority`.
+     4. Click "Assign Task" (`#btn-approve`).
+   - Updating / Changing Task Status via UI:
+     1. In the Tasks view (`dataView="tasks"`), click "Open Task" on the desired task row (`.btn-open-task`).
+     2. This pops up the Task Details modal.
+     3. Use `select` action on selector `#task-status-update` with value `"in_progress"`, `"completed"`, or `"pending"`.
+     4. Click "Save Status" button (`#btn-approve`).
+     5. Repeat for subsequent tasks if multiple tasks need updating.
+   - Approvals via UI:
+     1. In Approval Center (`dataView="approvals"`), click the green "Approve" button (`.btn-approve-leave-direct` or `.btn-approve-exp-direct`).
+3. Browser tool action format:
+   - Open page: `{"tool": "browser", "args": {"action": "open_page", "url": "http://..."}}`
+   - Observe DOM: `{"tool": "browser", "args": {"action": "observe", "selector": "body"}}`
+   - Click: `{"tool": "browser", "args": {"action": "click", "selector": "[data-agent-id='...']" or "#id"}}`
+   - Type: `{"tool": "browser", "args": {"action": "type", "selector": "#id", "value": "..."}}`
+   - Select Dropdown: `{"tool": "browser", "args": {"action": "select", "selector": "#id", "value": "..."}}`
+4. NEVER invent or call fake tools. Our automated security guard automatically intercepts write operations and prompts the human operator for authorization when needed.
+5. If you need to ask the human operator a clarifying question or request specific user input, use the 'ask_user' tool with {"question": "..."}.
+6. COMPANY MEMORY: If you ask the human a question and they provide an answer or a rule, use the 'memorize_fact' tool to save that rule for future runs!
 
 Available Tools:
 {tool_descriptions}
 """
 
 
+
+def _lookup_record_for_approval(table: str, record_id: Any) -> Optional[dict]:
+    """Helper to query the existing SQLite record for rich approval previews."""
+    if not record_id:
+        return None
+    try:
+        from workhub_project.database.db_utils import get_db_connection
+        rid = str(record_id).strip()
+        with get_db_connection() as conn:
+            # 1. Exact match
+            row = conn.execute(f"SELECT * FROM {table} WHERE id = ?", (rid,)).fetchone()
+            if not row:
+                # 2. Try prefix matching (e.g. '2' -> 'LV-202' or 'LV-002')
+                prefix_map = {
+                    "leaves": "LV-",
+                    "expenses": "EXP-",
+                    "tasks": "TSK-",
+                    "employees": "EMP-",
+                    "documents": "DOC-",
+                    "emails": "MSG-",
+                    "benefits": "BEN-"
+                }
+                pref = prefix_map.get(table, "")
+                if pref:
+                    row = conn.execute(
+                        f"SELECT * FROM {table} WHERE id LIKE ? OR id LIKE ?", 
+                        (f"{pref}%{rid}", f"%{rid}")
+                    ).fetchone()
+            if row:
+                return dict(row)
+    except Exception:
+        pass
+    return None
+
+
 def _build_approval_context(tool_name: str, tool_args: dict, blocked_reason: str = None) -> dict:
-    name_lower = tool_name.lower()
-    q = str(tool_args.get("query", ""))
+    """
+    Builds rich, human-readable context for approval requests so human verifiers
+    understand exactly what entity, action, and fields are being modified.
+    """
+    name_lower = (tool_name or "").lower()
+    q = str(tool_args.get("query", "")).strip()
     q_upper = q.upper()
-    
-    if "employee" in name_lower or "create_employee" in name_lower:
-        emp_name = tool_args.get("name") or tool_args.get("employee_name", "New Employee")
-        role = tool_args.get("role") or tool_args.get("job_title", "Staff")
-        dept = tool_args.get("department", "General")
-        return {
-            "title": f"Onboard Employee: {emp_name}",
-            "action_type": "CREATE",
-            "entity": "Employee",
-            "summary": f"The agent is creating an employee profile for {emp_name} as {role} in {dept}.",
-            "details": {
-                "Full Name": emp_name,
-                "Role / Title": role,
-                "Department": dept,
-                "Email": tool_args.get("email", "N/A"),
-                "Phone": tool_args.get("phone", "N/A"),
-                "Manager": tool_args.get("manager", "Admin")
-            }
-        }
-    elif "expense" in name_lower:
-        exp_id = tool_args.get("id") or tool_args.get("expense_id", "N/A")
-        emp = tool_args.get("employee", "")
-        amt = tool_args.get("amount", "")
-        status = tool_args.get("status", "approved")
-        cat = tool_args.get("category", "")
-        return {
-            "title": f"Update Expense: {exp_id}",
-            "action_type": "UPDATE",
-            "entity": "Expense Claim",
-            "summary": f"The agent is updating expense {exp_id} ({f'for {emp}' if emp else ''}) to status '{status}'.",
-            "details": {
-                "Expense ID": exp_id,
-                "Employee": emp or "N/A",
-                "Category": cat or "N/A",
-                "Amount": amt or "N/A",
-                "New Status": status
-            }
-        }
-    elif "task" in name_lower:
-        title = tool_args.get("title", "New Task")
-        assignee = tool_args.get("assignedTo") or tool_args.get("assignee", "Staff")
-        prio = tool_args.get("priority", "medium")
-        due = tool_args.get("dueDate", "N/A")
-        return {
-            "title": f"Assign Task: {title}",
-            "action_type": "CREATE",
-            "entity": "Task",
-            "summary": f"The agent is assigning task '{title}' to {assignee} ({prio} priority, due {due}).",
-            "details": {
-                "Task Title": title,
-                "Assignee": assignee,
-                "Priority": prio,
-                "Due Date": due
-            }
-        }
-    elif "leave" in name_lower:
-        emp = tool_args.get("employee", "Employee")
-        ltype = tool_args.get("type", "PTO")
-        status = tool_args.get("status", "approved")
-        dates = tool_args.get("dates", "N/A")
-        return {
-            "title": f"Process Leave: {emp}",
-            "action_type": "UPDATE",
-            "entity": "Leave Request",
-            "summary": f"The agent is updating {ltype} leave for {emp} ({dates}) to status '{status}'.",
-            "details": {
-                "Employee": emp,
-                "Leave Type": ltype,
-                "Dates": dates,
-                "Status": status
-            }
-        }
-    elif "document" in name_lower:
-        doc_name = tool_args.get("name") or tool_args.get("title", "New Document")
-        dtype = tool_args.get("type", "Policy")
-        return {
-            "title": f"Save Document: {doc_name}",
-            "action_type": "CREATE",
-            "entity": "Document",
-            "summary": f"The agent is saving document '{doc_name}' ({dtype}).",
-            "details": {
-                "Title": doc_name,
-                "Type": dtype,
-                "Related To": tool_args.get("relatedTo", "Company")
-            }
-        }
-    elif "email" in name_lower:
-        to = tool_args.get("to") or tool_args.get("recipient", "Employees")
-        subj = tool_args.get("subject", "Announcement")
-        return {
-            "title": f"Send Email: {subj}",
-            "action_type": "NOTIFICATION",
-            "entity": "Email",
-            "summary": f"The agent is sending email '{subj}' to {to}.",
-            "details": {
-                "To": to,
-                "Subject": subj
-            }
-        }
-    elif tool_name == "sql_query":
+
+    # 1. Direct SQL Mutations
+    if tool_name == "sql_query":
         table = "Database"
-        for t in ["employees", "expenses", "tasks", "leaves", "documents", "emails", "benefits"]:
+        for t in ["employees", "expenses", "tasks", "leaves", "documents", "emails", "benefits", "audit_logs"]:
             if t.upper() in q_upper:
                 table = t
                 break
-        action_type = "UPDATE" if "UPDATE" in q_upper else ("INSERT" if "INSERT" in q_upper else ("DELETE" if "DELETE" in q_upper else "MUTATION"))
+        
+        if "DELETE" in q_upper:
+            act = "DELETE"
+            summary = f"The agent is executing an SQL DELETE on table '{table}'."
+        elif "UPDATE" in q_upper:
+            act = "UPDATE"
+            summary = f"The agent is updating records in table '{table}' via SQL."
+        elif "INSERT" in q_upper:
+            act = "INSERT"
+            summary = f"The agent is inserting new records into table '{table}'."
+        else:
+            act = "MUTATION"
+            summary = f"The agent is modifying table '{table}'."
+
         return {
-            "title": f"SQL {action_type} on '{table}'",
-            "action_type": action_type,
-            "entity": table,
-            "summary": f"The agent wants to execute a data modification on the '{table}' table.",
+            "title": f"SQL {act} on '{table}'",
+            "action_type": act,
+            "entity": table.capitalize(),
+            "summary": summary,
+            "sql_query": q,
             "details": {
                 "Target Table": table,
-                "SQL Query": q
+                "Operation": act,
+                "SQL Statement": q
             }
         }
-    else:
+
+    # 2. Employee Operations
+    if "employee" in name_lower:
+        emp_id = tool_args.get("id") or tool_args.get("employee_id") or "New"
+        rec = _lookup_record_for_approval("employees", emp_id) if emp_id != "New" else None
+        actual_id = rec["id"] if rec else emp_id
+        emp_name = tool_args.get("name") or tool_args.get("employee_name") or (rec["name"] if rec else f"Employee {emp_id}")
+        role = tool_args.get("role") or tool_args.get("job_title") or (rec["role"] if rec else "N/A")
+        dept = tool_args.get("department") or (rec["department"] if rec else "N/A")
+
+        if "create" in name_lower or "onboard" in name_lower:
+            return {
+                "title": f"Onboard Employee: {emp_name}",
+                "action_type": "CREATE",
+                "entity": "Employee",
+                "summary": f"Create new employee profile for {emp_name} ({role}, {dept}).",
+                "details": {
+                    "Full Name": emp_name,
+                    "Department": dept,
+                    "Role": role,
+                    "Email": tool_args.get("email", "N/A"),
+                    "Phone": tool_args.get("phone", "N/A"),
+                    "Manager": tool_args.get("manager", "Admin")
+                }
+            }
+        elif "delete" in name_lower or "terminate" in name_lower or "offboard" in name_lower:
+            return {
+                "title": f"Offboard / Delete Employee: {emp_name} ({actual_id})",
+                "action_type": "DELETE",
+                "entity": "Employee",
+                "summary": f"Remove/terminate employee record for {emp_name} (ID: {actual_id}).",
+                "details": {
+                    "Employee ID": actual_id,
+                    "Name": emp_name,
+                    "Reason": tool_args.get("reason", "Administrative action")
+                }
+            }
+        else: # Update / Modify
+            return {
+                "title": f"Update Employee Profile: {emp_name} ({actual_id})",
+                "action_type": "UPDATE",
+                "entity": "Employee",
+                "summary": f"Update profile details for {emp_name} ({actual_id}).",
+                "details": {
+                    "Employee ID": actual_id,
+                    "Updated Fields": {k: v for k, v in tool_args.items() if k not in ("run_id",)}
+                }
+            }
+
+    # 3. Expense Operations
+    if "expense" in name_lower:
+        exp_id = tool_args.get("id") or tool_args.get("expense_id", "New")
+        rec = _lookup_record_for_approval("expenses", exp_id) if exp_id != "New" else None
+        actual_id = rec["id"] if rec else exp_id
+        emp = tool_args.get("employee") or (rec["employee"] if rec else "N/A")
+        amt = tool_args.get("amount") or (rec["amount"] if rec else "N/A")
+        cat = tool_args.get("category") or (rec["category"] if rec else "N/A")
+        status = tool_args.get("status", "approved")
+        prev_status = rec["status"] if rec else "pending"
+
+        if "delete" in name_lower:
+            return {
+                "title": f"Delete Expense Claim: {actual_id} ({emp})",
+                "action_type": "DELETE",
+                "entity": "Expense Claim",
+                "summary": f"Delete expense claim {actual_id} for {emp} (${amt}).",
+                "details": {"Expense ID": actual_id, "Employee": emp, "Amount": f"${amt}"}
+            }
+        elif "create" in name_lower:
+            return {
+                "title": f"Submit New Expense: {actual_id} (${amt})",
+                "action_type": "CREATE",
+                "entity": "Expense Claim",
+                "summary": f"Create expense claim of ${amt} for {emp} ({cat}).",
+                "details": {
+                    "Employee": emp,
+                    "Category": cat,
+                    "Amount": f"${amt}",
+                    "Description": tool_args.get("description", "N/A")
+                }
+            }
+        else: # Update / Approve / Reject
+            action_verb = "Approve" if status.lower() == "approved" else ("Reject" if status.lower() == "rejected" else "Update")
+            return {
+                "title": f"{action_verb} Expense Claim: {actual_id} ({emp})",
+                "action_type": "UPDATE",
+                "entity": "Expense Claim",
+                "summary": f"{action_verb} expense claim of ${amt} for {emp} ({cat}).",
+                "details": {
+                    "Expense ID": actual_id,
+                    "Employee": emp,
+                    "Category": cat,
+                    "Amount": f"${amt}",
+                    "Status Change": f"{prev_status} ➔ {status}"
+                }
+            }
+
+    # 4. Task Operations
+    if "task" in name_lower:
+        task_id = tool_args.get("id") or tool_args.get("task_id", "New")
+        rec = _lookup_record_for_approval("tasks", task_id) if task_id != "New" else None
+        actual_id = rec["id"] if rec else task_id
+        title = tool_args.get("title") or (rec["title"] if rec else f"Task {task_id}")
+        assignee = tool_args.get("assignedTo") or tool_args.get("assignee") or (rec["assignedTo"] if rec else "N/A")
+        status = tool_args.get("status", "in-progress")
+        prev_status = rec["status"] if rec else "pending"
+        prio = tool_args.get("priority") or (rec["priority"] if rec else "medium")
+        due = tool_args.get("dueDate") or (rec["dueDate"] if rec else "N/A")
+
+        if "delete" in name_lower:
+            return {
+                "title": f"Delete Task: '{title}' ({actual_id})",
+                "action_type": "DELETE",
+                "entity": "Task",
+                "summary": f"Permanently delete task {actual_id} ('{title}').",
+                "details": {"Task ID": actual_id, "Title": title, "Assignee": assignee}
+            }
+        elif "create" in name_lower:
+            return {
+                "title": f"Create & Assign Task: '{title}'",
+                "action_type": "CREATE",
+                "entity": "Task",
+                "summary": f"Create new task '{title}' assigned to {assignee} ({prio} priority).",
+                "details": {
+                    "Title": title,
+                    "Assigned To": assignee,
+                    "Priority": prio,
+                    "Due Date": due
+                }
+            }
+        else: # Update / Reassign / Status
+            action_verb = "Complete" if status.lower() == "completed" else "Update"
+            return {
+                "title": f"{action_verb} Task: '{title}' ({actual_id})",
+                "action_type": "UPDATE",
+                "entity": "Task",
+                "summary": f"{action_verb} task '{title}' (Assigned to: {assignee}, Status: {status}).",
+                "details": {
+                    "Task ID": actual_id,
+                    "Task Title": title,
+                    "Assigned To": assignee,
+                    "Priority": prio,
+                    "Status Change": f"{prev_status} ➔ {status}"
+                }
+            }
+
+    # 5. Leave Operations
+    if "leave" in name_lower:
+        leave_id = tool_args.get("id") or tool_args.get("leave_id", "New")
+        rec = _lookup_record_for_approval("leaves", leave_id) if leave_id != "New" else None
+        actual_id = rec["id"] if rec else leave_id
+        emp = tool_args.get("employee") or (rec["employee"] if rec else "Employee")
+        ltype = tool_args.get("type") or (rec["type"] if rec else "PTO / Annual")
+        dates = tool_args.get("dates") or (rec["dates"] if rec else "N/A")
+        status = tool_args.get("status", "approved")
+        prev_status = rec["status"] if rec else "pending"
+
+        if "delete" in name_lower:
+            return {
+                "title": f"Delete Leave Record: {actual_id} ({emp})",
+                "action_type": "DELETE",
+                "entity": "Leave Request",
+                "summary": f"Delete leave request {actual_id} for {emp} ({ltype}, {dates}).",
+                "details": {"Leave ID": actual_id, "Employee": emp, "Dates": dates}
+            }
+        elif "create" in name_lower:
+            return {
+                "title": f"Submit Leave Request: {emp} ({ltype})",
+                "action_type": "CREATE",
+                "entity": "Leave Request",
+                "summary": f"Submit new {ltype} leave for {emp} ({dates}).",
+                "details": {"Employee": emp, "Leave Type": ltype, "Dates": dates}
+            }
+        else: # Update / Approve / Cancel
+            action_verb = "Approve" if status.lower() == "approved" else ("Reject" if status.lower() == "rejected" else ("Cancel" if status.lower() == "cancelled" else "Process"))
+            return {
+                "title": f"{action_verb} Leave Request: {emp} ({actual_id})",
+                "action_type": "UPDATE",
+                "entity": "Leave Request",
+                "summary": f"{action_verb} {ltype} request for {emp} ({dates}). Currently {prev_status}.",
+                "details": {
+                    "Leave ID": actual_id,
+                    "Employee": emp,
+                    "Leave Type": ltype,
+                    "Dates": dates,
+                    "Status Change": f"{prev_status} ➔ {status}"
+                }
+            }
+
+    # 6. Benefits Operations
+    if "benefit" in name_lower:
+        ben_id = tool_args.get("id") or tool_args.get("benefit_id", "New")
+        rec = _lookup_record_for_approval("benefits", ben_id) if ben_id != "New" else None
+        actual_id = rec["id"] if rec else ben_id
+        name = tool_args.get("name") or (rec["name"] if rec else "Benefit Plan")
+        prov = tool_args.get("provider") or (rec["provider"] if rec else "N/A")
+        cov = tool_args.get("coverage") or (rec["coverage"] if rec else "N/A")
+        
+        if "delete" in name_lower:
+            return {
+                "title": f"Delete Benefit Plan: '{name}' ({actual_id})",
+                "action_type": "DELETE",
+                "entity": "Benefit",
+                "summary": f"Remove benefit plan {actual_id} ('{name}').",
+                "details": {"Benefit ID": actual_id, "Name": name}
+            }
+        elif "create" in name_lower:
+            return {
+                "title": f"Create Benefit Plan: '{name}'",
+                "action_type": "CREATE",
+                "entity": "Benefit",
+                "summary": f"Create corporate benefit plan '{name}' with {prov}.",
+                "details": {"Name": name, "Provider": prov, "Coverage": cov}
+            }
+        else:
+            return {
+                "title": f"Update Benefit Plan: '{name}' ({actual_id})",
+                "action_type": "UPDATE",
+                "entity": "Benefit",
+                "summary": f"Update benefit plan '{name}' ({actual_id}).",
+                "details": tool_args
+            }
+
+    # 7. Document Operations
+    if "document" in name_lower:
+        doc_name = tool_args.get("name") or tool_args.get("title", "Document")
+        dtype = tool_args.get("type", "Policy / Form")
+        rel = tool_args.get("relatedTo", "Company")
+
+        if "delete" in name_lower:
+            return {
+                "title": f"Delete Document: '{doc_name}'",
+                "action_type": "DELETE",
+                "entity": "Document",
+                "summary": f"Permanently remove document '{doc_name}'.",
+                "details": {"Document Name": doc_name}
+            }
+        else:
+            return {
+                "title": f"Upload / Save Document: '{doc_name}'",
+                "action_type": "CREATE",
+                "entity": "Document",
+                "summary": f"Save document '{doc_name}' ({dtype}, related to {rel}).",
+                "details": {"Document Name": doc_name, "Type": dtype, "Related To": rel}
+            }
+
+    # 8. Email / Notifications
+    if "email" in name_lower:
+        to = tool_args.get("to") or tool_args.get("recipient", "Recipient")
+        subj = tool_args.get("subject", "HR Notification")
         return {
-            "title": f"Authorize {tool_name}",
-            "action_type": "EXECUTE",
-            "entity": tool_name,
-            "summary": blocked_reason or f"The agent wants to execute {tool_name} which requires human approval.",
-            "details": tool_args
+            "title": f"Send Email Notice: '{subj}'",
+            "action_type": "NOTIFY",
+            "entity": "Email",
+            "summary": f"Dispatch official HR email to {to} with subject '{subj}'.",
+            "details": {"Recipient": to, "Subject": subj, "Body Preview": str(tool_args.get("body", ""))[:120]}
         }
+
+    # 9. Payroll / HR Extra Tools
+    if "payroll" in name_lower:
+        period = tool_args.get("period") or tool_args.get("pay_period", "Current Period")
+        return {
+            "title": f"Approve Payroll Batch: {period}",
+            "action_type": "APPROVE",
+            "entity": "Payroll",
+            "summary": f"Authorize and finalize payroll execution for {period}.",
+            "details": {"Pay Period": period, "Authorized By": "HR Administrator"}
+        }
+
+    if "warning" in name_lower:
+        emp = tool_args.get("employee") or tool_args.get("name", "Employee")
+        reason = tool_args.get("reason", "Policy violation")
+        return {
+            "title": f"Issue Formal Warning: {emp}",
+            "action_type": "UPDATE",
+            "entity": "Employee",
+            "summary": f"Issue official HR compliance notice to {emp}.",
+            "details": {"Employee": emp, "Reason": reason}
+        }
+
+    # Default Fallback
+    return {
+        "title": f"Authorize {tool_name.replace('_', ' ').title()}",
+        "action_type": "EXECUTE",
+        "entity": "System",
+        "summary": blocked_reason or f"The agent requested execution of {tool_name}.",
+        "details": {k: str(v) for k, v in tool_args.items() if k not in ("run_id",)}
+    }
 
 
 class RunState:
@@ -254,9 +511,13 @@ class Agent:
         self.history: List[Dict[str, str]] = []
         self.state_machine = StateMachine()
 
-    def _build_system_prompt(self) -> str:
+    def _build_system_prompt(self, is_web_mode: bool = False) -> str:
         tools_info = []
+        allowed_tools = {"browser", "ask_user", "finish", "memorize_fact"} if is_web_mode else None
+        
         for schema in self.registry.get_all_schemas():
+            if allowed_tools is not None and schema['name'] not in allowed_tools:
+                continue
             info = f"- {schema['name']}: {schema.get('description', 'No description')} \n  Parameters: {schema.get('parameters', {})}"
             tools_info.append(info)
             
@@ -268,6 +529,57 @@ class Agent:
                 memory_section += f"- [{m['topic']}]: {m['fact']}\n"
             memory_section += "\n"
             
+        if is_web_mode:
+            web_prompt = """You are an Autonomous Web Automation Browser Agent.
+Your goal is to complete the given task on-screen using ONLY the browser tool.
+
+CRITICAL ARCHITECTURAL PRINCIPLES:
+1. PURE BROWSER EXECUTION: You interact ONLY through visible on-screen browser actions (`open_page`, `observe`, `click`, `type`, `select`, `extract_text`, `wait_for_condition`).
+2. NO CSS/XPATH GUESSING: Specify clean semantic targets (e.g. `target: "Open Task"`, `target_id: "TSK-001"`, `target: "Update Task Status in SQLite"`, `target: "Save Status"`, `target: "New Task"`, `target: "Approve"`).
+3. MODAL INTERACTION FLOW:
+   - When you click an action that opens a modal dialog (e.g. "Open Task"), call `observe` to view the modal's active fields.
+   - Select or type the desired values into the modal's fields.
+   - Click the modal's action button (e.g. "Save Status", "Approve", "Submit").
+   - Call `observe` again to verify the modal closed and the table updated.
+4. OBSERVATION-ACTION CYCLE:
+   - Always `observe` the page after navigating or opening a dialog to see available semantic targets.
+
+Tool Action Format:
+- Open Page: {"tool": "browser", "args": {"action": "open_page", "url": "http://localhost:3000/index.html"}}
+- Observe Context: {"tool": "browser", "args": {"action": "observe"}}
+- Click Target: {"tool": "browser", "args": {"action": "click", "target": "Open Task", "target_id": "TSK-001"}}
+- Type into Input: {"tool": "browser", "args": {"action": "type", "target": "Task Title", "value": "New Title"}}
+- Select Dropdown: {"tool": "browser", "args": {"action": "select", "target": "Update Task Status in SQLite", "value": "in_progress"}}
+- Wait for Condition: {"tool": "browser", "args": {"action": "wait_for_condition", "condition_type": "dom_stable"}}
+
+You MUST respond in valid JSON with this exact format:
+{
+    "thought": "<reasoning for next browser action>",
+    "action": {
+        "tool": "browser",
+        "args": {
+            "action": "...",
+            "target": "..."
+        }
+    }
+}
+
+When finished, call:
+{
+    "thought": "All browser operations completed and verified on-screen.",
+    "action": {
+        "tool": "finish",
+        "args": {
+            "answer": "Summary of web automation results"
+        }
+    }
+}
+
+Available Tools:
+{tool_descriptions}
+"""
+            return web_prompt.replace("{tool_descriptions}", "\n".join(tools_info))
+
         return (
             SYSTEM_PROMPT
             .replace("{database_schema}", DATABASE_SCHEMA_DOC)
@@ -304,7 +616,8 @@ class Agent:
                 self.history.append({"role": "assistant", "content": json.dumps(parsed)})
                 self.history.append({"role": "user", "content": step.observation})
 
-        system_prompt = self._build_system_prompt()
+        is_web_mode = any(k in task.lower() for k in ["http://", "https://", "localhost:", "browser", "web automation", "on-screen", "open page", "navigate to", "click", "ui"])
+        system_prompt = self._build_system_prompt(is_web_mode=is_web_mode)
         state = RunState(goal=task)
         final_answer = None
         
@@ -402,14 +715,94 @@ class Agent:
                 
             thought = parsed.get("thought", parsed.get("reason", ""))
             action = parsed.get("action", {})
-            tool_name = action.get("tool")
-            tool_args = action.get("args", {})
+            
+            # Robust action & tool extraction across various LLM formatting styles
+            BROWSER_ACTIONS = {
+                "open_page", "observe", "click", "type", "scroll", "wait_for_condition",
+                "extract_text", "screenshot", "press_key", "select_option", "drag_and_drop", "hover", "navigate"
+            }
+
+            if isinstance(action, dict):
+                tool_name = action.get("tool") or action.get("name") or action.get("tool_name") or parsed.get("tool") or parsed.get("tool_name")
+                tool_args = action.get("args") or action.get("parameters") or action.get("arguments") or parsed.get("args") or parsed.get("parameters") or {}
+                # If action dict itself is a browser action (e.g. {"action": "open_page", "url": "..."})
+                act_val = action.get("action")
+                if act_val in BROWSER_ACTIONS:
+                    tool_name = "browser"
+                    tool_args = {**action, **tool_args}
+                elif not tool_name and "query" in action:
+                    tool_name = "sql_query"
+                    tool_args = {"query": action["query"]}
+                elif not tool_name and "answer" in action:
+                    tool_name = "finish"
+                    tool_args = {"answer": action["answer"]}
+                elif not tool_name and "question" in action:
+                    tool_name = "ask_user"
+                    tool_args = {"question": action["question"]}
+            elif isinstance(action, str):
+                if action in BROWSER_ACTIONS:
+                    tool_name = "browser"
+                    tool_args = {k: v for k, v in parsed.items() if k not in ["thought", "reason", "step", "plan"]}
+                    tool_args["action"] = action
+                elif action in ["ask_user", "ask_human", "question"]:
+                    tool_name = "ask_user"
+                    tool_args = {"question": parsed.get("question", parsed.get("query", "Please provide more details."))}
+                elif action in ["sql_query", "query", "select", "sql"]:
+                    tool_name = "sql_query"
+                    tool_args = {"query": parsed.get("query", parsed.get("sql", ""))}
+                elif action in ["finish", "done", "complete", "answer"]:
+                    tool_name = "finish"
+                    tool_args = {"answer": parsed.get("answer", parsed.get("final_answer", ""))}
+                else:
+                    tool_name = action
+                    tool_args = parsed.get("args") or {k: v for k, v in parsed.items() if k not in ["thought", "reason", "action", "step", "plan"]}
+            else:
+                tool_name = parsed.get("tool") or parsed.get("tool_name")
+                tool_args = parsed.get("args") or parsed.get("parameters") or {}
+
+            # Direct root-level fallbacks
+            if not tool_name:
+                if "answer" in parsed:
+                    tool_name = "finish"
+                    tool_args = {"answer": parsed["answer"]}
+                elif "question" in parsed:
+                    tool_name = "ask_user"
+                    tool_args = {"question": parsed["question"]}
+                elif "query" in parsed:
+                    tool_name = "sql_query"
+                    tool_args = {"query": parsed["query"]}
+                elif "url" in parsed and ("open" in thought.lower() or "navigate" in thought.lower()):
+                    tool_name = "browser"
+                    tool_args = {"action": "open_page", "url": parsed["url"]}
+                elif "selector" in parsed:
+                    tool_name = "browser"
+                    tool_args = {"action": "click" if "click" in thought.lower() else "observe", **parsed}
+                elif "data" in parsed:
+                    d = parsed["data"]
+                    if isinstance(d, dict) and "title" in d:
+                        tool_name = "create_task"
+                        tool_args = d
+
+            # If tool_name is still missing, check if thought contains the final answer
+            if not tool_name and thought:
+                if any(kw in thought.lower() for kw in ["task complete", "audit complete", "here is the summary", "in conclusion", "summary of findings", "summary of the task status"]):
+                    tool_name = "finish"
+                    tool_args = {"answer": thought}
             
             # Graceful alias fallback for LLM hallucinated tool names
             if tool_name in ["approval_required", "ask_approval", "request_approval"]:
                 q = tool_args.get("request") or tool_args.get("question") or tool_args.get("message") or "Do you approve this operation?"
                 tool_name = "ask_user"
                 tool_args = {"question": f"Human approval requested: {q}"}
+            elif tool_name in ["create_task", "tasks", "task"]:
+                # If create_task tool is not in registry, translate to sql_query or task_tools
+                if not self.registry.get_tool("create_task"):
+                    tool_name = "sql_query"
+                    t_title = tool_args.get("title", "New Task")
+                    t_assigned = tool_args.get("assignedTo", tool_args.get("assigned_to", "Admin"))
+                    t_prio = tool_args.get("priority", "medium")
+                    t_status = tool_args.get("status", "pending")
+                    tool_args = {"query": f"INSERT INTO tasks (title, assignedTo, priority, status) VALUES ('{t_title}', '{t_assigned}', '{t_prio}', '{t_status}');"}
             
             if thought:
                 await _emit({"type": "thought", "data": {"thought": thought}})
@@ -428,12 +821,19 @@ class Agent:
             state.action_history.append(action_signature)
             
             if len(state.action_history) >= 3 and len(set(state.action_history[-3:])) == 1:
-                obs = f"SYSTEM ERROR: Loop detected! You just tried '{tool_name}' with these exact arguments 3 times in a row without making progress. You MUST try a different approach, a different selector, or scroll to find new elements."
+                state.action_history.clear()  # Reset so it does not perpetually loop on every subsequent step
+                obs = f"SYSTEM ERROR: Loop detected! You attempted '{tool_name}' with identical arguments 3 times without making progress. You MUST try a different query/tool or call the 'finish' tool with your final summary."
                 self.history.append({"role": "user", "content": f"Observation:\n{obs}"})
                 await _emit({"type": "observation", "data": {"observation": obs}})
                 continue
             
             # Guard & Policy Checks
+            if is_web_mode and tool_name not in ["browser", "ask_user", "finish", "memorize_fact"]:
+                obs = "POLICY ERROR: Web Automation Mode is active. Direct database tools and SQL queries are disabled for this task. You must perform all actions on-screen via the 'browser' tool."
+                self.history.append({"role": "user", "content": f"Observation:\n{obs}"})
+                await _emit({"type": "observation", "data": {"observation": obs}})
+                continue
+
             is_schema_alteration = False
             is_mutation = False
             blocked_reason = ""
@@ -558,7 +958,22 @@ class Agent:
 
             if tool_name == "finish":
                 await self.state_machine.transition(AgentState.DONE)
-                final_answer = tool_args.get("answer", tool_args.get("final_answer", "Task complete."))
+                if "answer" in tool_args and isinstance(tool_args["answer"], str) and len(tool_args) == 1:
+                    final_answer = tool_args["answer"]
+                elif "final_answer" in tool_args and isinstance(tool_args["final_answer"], str) and len(tool_args) == 1:
+                    final_answer = tool_args["final_answer"]
+                elif any(isinstance(v, str) for v in tool_args.values()):
+                    # Combine all textual parts (e.g. if LLM used multiple markdown keys)
+                    parts = []
+                    for k, v in tool_args.items():
+                        if isinstance(v, str):
+                            if not k.startswith("_") and k not in ["tool", "tool_name", "type"]:
+                                parts.append(v)
+                        elif isinstance(v, (dict, list)):
+                            parts.append(json.dumps(v, indent=2))
+                    final_answer = "\n\n".join(parts) if parts else "Task complete."
+                else:
+                    final_answer = json.dumps(tool_args, indent=2)
                 if not isinstance(final_answer, str):
                     final_answer = json.dumps(final_answer, indent=2)
                 for sg in active_subgoals:

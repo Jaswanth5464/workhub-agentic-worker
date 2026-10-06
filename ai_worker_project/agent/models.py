@@ -28,6 +28,7 @@ class Run(BaseModel):
     status: str = "pending"  # pending, running, completed, failed, blocked_on_human
     steps: List[Step] = Field(default_factory=list)
     final_answer: Optional[str] = None
+    max_steps: int = 100
     created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
     

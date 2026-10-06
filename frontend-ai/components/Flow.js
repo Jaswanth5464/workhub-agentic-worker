@@ -235,7 +235,7 @@ export function renderFlow(root, state, callbacks = {}) {
         const actions = state.steps.filter(s => s.internalType === 'action' || s.tool || (s.data && s.data.action));
         const diagnosticActions = actions.filter(a => {
             const q = String(a.args?.query || a.action?.args?.query || a.tool || '').toUpperCase();
-            return q.includes('PRAGMA') || q.includes('SQLITE_MASTER') || a.tool === 'ask_user' || a.action?.question;
+            return q.includes('PRAGMA') || q.includes('SQLITE_MASTER');
         });
 
         if (diagnosticActions.length > 0) {
@@ -253,11 +253,11 @@ export function renderFlow(root, state, callbacks = {}) {
                         <span>🔄</span>
                         <span>DYNAMIC ADAPTIVE DISCOVERY (${diagnosticActions.length} Schema Introspections)</span>
                     </div>
-                    <span style="font-size:11px; color:#94a3b8;">Triggered by SQL column mismatch recovery</span>
+                    <span style="font-size:11px; color:#94a3b8;">Triggered by dynamic introspection</span>
                 </div>
                 <div style="display:flex; flex-direction:column; gap:6px;">
                     ${diagnosticActions.map((da, dIdx) => {
-                        const qStr = da.args?.query || da.action?.args?.query || da.action?.question || da.tool;
+                        const qStr = da.args?.query || da.action?.args?.query || da.tool;
                         return `
                             <div style="display:flex; justify-content:space-between; align-items:center; background:rgba(15,23,42,0.6); padding:6px 10px; border-radius:6px; font-size:11px; font-family:var(--font-mono, monospace);">
                                 <span style="color:#e2e8f0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:80%;">
@@ -272,11 +272,11 @@ export function renderFlow(root, state, callbacks = {}) {
             streamArea.appendChild(diagContainer);
         }
 
-        // 3.2 INTERACTIVE OPERATOR CLARIFICATION CARD (WHEN NEEDS_USER OR ASKING QUESTION)
-        const isClarifying = state.currentState === 'NEEDS_USER' || state.currentState === 'CLARIFYING';
-        const questionStep = state.steps.slice().reverse().find(s => s.action?.question || (s.data && s.data.action && s.data.action.question));
-        if (isClarifying || questionStep) {
-            const questionText = questionStep?.action?.question || questionStep?.data?.action?.question || "Could you provide clarification on the database schema / missing columns?";
+        // 3.2 INTERACTIVE OPERATOR CLARIFICATION CARD (WHEN ACTIVE QUESTION PENDING)
+        const isClarifying = Boolean(state.pendingQuestion) && (state.currentState === 'NEEDS_USER' || state.currentState === 'CLARIFYING' || state.status === 'blocked_on_human');
+
+        if (isClarifying) {
+            const questionText = state.pendingQuestion || "The agent is requesting your confirmation or input to proceed.";
             const clarifyCard = document.createElement('div');
             clarifyCard.className = 'clarification-prompt-card';
             clarifyCard.style.margin = '14px 0';
@@ -287,25 +287,50 @@ export function renderFlow(root, state, callbacks = {}) {
             clarifyCard.innerHTML = `
                 <div style="display:flex; align-items:center; gap:8px; margin-bottom:10px;">
                     <span style="font-size:16px;">💬</span>
-                    <strong style="color:#fbbf24; font-size:13px; letter-spacing:0.5px;">OPERATOR CLARIFICATION REQUIRED</strong>
+                    <strong style="color:#fbbf24; font-size:13px; letter-spacing:0.5px;">OPERATOR CONFIRMATION REQUIRED</strong>
                 </div>
-                <div style="font-size:13px; color:#e2e8f0; margin-bottom:12px; line-height:1.5; background:rgba(15,23,42,0.8); padding:10px 14px; border-radius:6px;">
+                <div style="font-size:13px; color:#e2e8f0; margin-bottom:12px; line-height:1.5; background:rgba(15,23,42,0.8); padding:10px 14px; border-radius:6px; border-left:3px solid #fbbf24;">
                     ${escapeHtml(questionText)}
                 </div>
-                <div style="display:flex; gap:10px; align-items:center;">
-                    <input type="text" id="clarification-input" placeholder="Type clarification response or alternative table name..." style="flex:1; background:rgba(15,23,42,0.9); border:1px solid #475569; color:#f8fafc; padding:8px 12px; border-radius:6px; font-size:12px;" />
+                <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                    <input type="text" id="clarification-input" placeholder="Type your response (e.g. 'Yes, proceed', 'Approve all', 'Cancel')..." style="flex:1; min-width:200px; background:rgba(15,23,42,0.9); border:1px solid #475569; color:#f8fafc; padding:8px 12px; border-radius:6px; font-size:12px;" />
                     <button id="btn-submit-clarification" style="background:#f59e0b; color:#0f172a; border:none; padding:8px 16px; border-radius:6px; font-weight:700; font-size:12px; cursor:pointer;">Send Response</button>
+                    <button id="btn-quick-yes" style="background:#10b981; color:#ffffff; border:none; padding:8px 14px; border-radius:6px; font-weight:600; font-size:12px; cursor:pointer;">✓ Yes, Approve</button>
                 </div>
             `;
             
             const submitBtn = clarifyCard.querySelector('#btn-submit-clarification');
+            const quickYesBtn = clarifyCard.querySelector('#btn-quick-yes');
             const inputField = clarifyCard.querySelector('#clarification-input');
-            if (submitBtn && callbacks.onApprove) {
+
+            const sendAnswer = (respText) => {
+                if (callbacks.onApprove) {
+                    if (submitBtn) submitBtn.disabled = true;
+                    if (quickYesBtn) quickYesBtn.disabled = true;
+                    if (inputField) inputField.disabled = true;
+                    callbacks.onApprove(true, respText);
+                }
+            };
+
+            if (submitBtn) {
                 submitBtn.onclick = (e) => {
                     e.stopPropagation();
-                    const resp = inputField.value.trim();
-                    if (resp) {
-                        callbacks.onApprove(true, resp);
+                    const resp = inputField ? inputField.value.trim() : '';
+                    sendAnswer(resp || 'Yes, proceed');
+                };
+            }
+            if (quickYesBtn) {
+                quickYesBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    sendAnswer('Yes, approve and proceed');
+                };
+            }
+            if (inputField) {
+                inputField.onkeydown = (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        const resp = inputField.value.trim() || 'Yes, proceed';
+                        sendAnswer(resp);
                     }
                 };
             }

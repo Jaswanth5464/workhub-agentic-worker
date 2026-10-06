@@ -5,7 +5,7 @@ from typing import List
 
 @dataclass
 class AgentConfig:
-    max_steps: int = 40
+    max_steps: int = 100
     default_budget: float = 10.0
 
 @dataclass

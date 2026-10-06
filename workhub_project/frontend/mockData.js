@@ -23,7 +23,7 @@ const mockData = {
             "email": "jane.smith@workhub.local",
             "joined": "2022-06-10",
             "emergencyContact": "Robert Smith (Husband) - 555-0200",
-            "phone": "555-0201",
+            "phone": "555-0101",
             "manager": "Admin"
         },
         {
@@ -733,6 +733,30 @@ const mockData = {
             "emergencyContact": "+1-555-0198",
             "phone": "+1-555-0199",
             "manager": "Admin"
+        },
+        {
+            "id": "EMP-048",
+            "name": "Kanamarlapudi Jaswanth",
+            "department": "Engineering",
+            "role": "abc",
+            "status": "active",
+            "email": "jaswanth5464@gmail.com",
+            "joined": "2026-10-06",
+            "emergencyContact": "3456789",
+            "phone": "06304685103",
+            "manager": "Admin"
+        },
+        {
+            "id": "EMP-049",
+            "name": "Kanamarlapudi Jaswanth",
+            "department": "Engineering",
+            "role": "abc",
+            "status": "active",
+            "email": "jaswanth5464@gmail.com",
+            "joined": "2026-10-06",
+            "emergencyContact": "3456789",
+            "phone": "06304685103",
+            "manager": "Admin"
         }
     ],
     "expenses": [
@@ -743,7 +767,7 @@ const mockData = {
             "amount": "\u20b94,500",
             "category": "Travel",
             "description": "Flight to client meeting in Mumbai",
-            "status": "pending",
+            "status": "approved",
             "receiptId": "DOC-001"
         },
         {
@@ -773,7 +797,7 @@ const mockData = {
             "amount": "\u20b92,000",
             "category": "Internet",
             "description": "Monthly WFH internet bill",
-            "status": "pending",
+            "status": "approved",
             "receiptId": "DOC-004"
         },
         {
@@ -783,7 +807,7 @@ const mockData = {
             "amount": "\u20b9500",
             "category": "Software",
             "description": "Audit Software license",
-            "status": "pending",
+            "status": "approved",
             "receiptId": null
         },
         {
@@ -793,7 +817,7 @@ const mockData = {
             "amount": "\u20b91,200",
             "category": "Travel",
             "description": null,
-            "status": "pending",
+            "status": "approved",
             "receiptId": null
         },
         {
@@ -803,7 +827,7 @@ const mockData = {
             "amount": "\u20b91,200",
             "category": "Travel",
             "description": null,
-            "status": "pending",
+            "status": "approved",
             "receiptId": null
         }
     ],
@@ -814,7 +838,7 @@ const mockData = {
             "assignedTo": "Admin",
             "dueDate": "2026-10-06",
             "priority": "high",
-            "status": "pending"
+            "status": "completed"
         },
         {
             "id": "TSK-002",
@@ -862,6 +886,14 @@ const mockData = {
             "assignedTo": "Elena Rostova",
             "dueDate": "2026-10-11",
             "priority": "low",
+            "status": "pending"
+        },
+        {
+            "id": "TSK-008",
+            "title": "vbjb",
+            "assignedTo": "jaswanth",
+            "dueDate": "2026-10-14",
+            "priority": "high",
             "status": "pending"
         }
     ],
@@ -979,6 +1011,30 @@ const mockData = {
             "date": "2026-09-20",
             "read": 0,
             "body": "Dear Bob,\n\nYour expense EXP-1044 for \u20b912,000 (New monitor setup) has been rejected.\n\nPolicy violation: Equipment purchases over \u20b910,000 must be pre-approved before purchase. Please ensure future equipment purchases have pre-approval.\n\nIf you have any questions, please contact HR.\n\nBest regards,\nHR Department\n\nRecipient: bob.w@workhub.local"
+        },
+        {
+            "id": "MSG-006",
+            "from_email": "john.doe@workhub.local",
+            "subject": "Test AI Notification",
+            "date": "2026-10-06",
+            "read": 0,
+            "body": "Your leave request has been processed successfully."
+        },
+        {
+            "id": "MSG-007",
+            "from_email": "john.doe@workhub.local",
+            "subject": "Test AI Notification",
+            "date": "2026-10-06",
+            "read": 0,
+            "body": "Your leave request has been processed successfully."
+        },
+        {
+            "id": "MSG-008",
+            "from_email": "jaswanth5464@gmail.com",
+            "subject": "rcyvsv",
+            "date": "2026-10-06",
+            "read": 1,
+            "body": "bajdsnkgt"
         }
     ],
     "benefits": [
@@ -1004,6 +1060,14 @@ const mockData = {
             "provider": "Coursera/Udemy",
             "coverage": "\u20b925,000/year",
             "enrolled": 42,
+            "status": "active"
+        },
+        {
+            "id": "BEN-04",
+            "name": "abc",
+            "provider": "aa",
+            "coverage": "aa",
+            "enrolled": 0,
             "status": "active"
         }
     ]

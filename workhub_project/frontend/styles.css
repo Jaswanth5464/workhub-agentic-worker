@@ -432,3 +432,156 @@ body {
     justify-content: flex-end;
     gap: 1rem;
 }
+
+/* Form Controls & Employee Selection */
+.form-group {
+    margin-bottom: 1rem;
+}
+
+.form-label {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: var(--text-muted);
+    margin-bottom: 0.35rem;
+}
+
+select.form-control, input.form-control, textarea.form-control {
+    width: 100%;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background-color: #ffffff;
+    font-size: 0.9rem;
+    color: var(--text-main);
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+select.form-control:focus, input.form-control:focus, textarea.form-control:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+}
+
+select.form-control option {
+    padding: 0.5rem;
+}
+
+/* Toast Notifications */
+.toast-container {
+    position: fixed;
+    top: 1.5rem;
+    right: 1.5rem;
+    z-index: 100000;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.toast {
+    background: #ffffff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 1rem 1.25rem;
+    box-shadow: var(--shadow-md);
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    min-width: 320px;
+    animation: slideIn 0.3s ease;
+}
+
+.toast.toast-success { border-left: 4px solid var(--success); }
+.toast.toast-error { border-left: 4px solid var(--danger); }
+.toast.toast-warning { border-left: 4px solid var(--warning); }
+.toast.toast-info { border-left: 4px solid var(--primary); }
+
+@keyframes slideIn {
+    from { transform: translateX(100%); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+/* Validation Feedback */
+.invalid-feedback, .error-message {
+    font-size: 0.8rem;
+    color: var(--danger);
+    margin-top: 0.25rem;
+    display: block;
+}
+
+.form-control.is-invalid {
+    border-color: var(--danger) !important;
+    background-color: #fff5f5;
+}
+
+/* Developer HUD / Debug Panel */
+.dev-debug-panel {
+    position: fixed;
+    bottom: 1rem;
+    right: 1rem;
+    width: 360px;
+    background: rgba(17, 24, 39, 0.95);
+    color: #f3f4f6;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+    z-index: 99999;
+    font-size: 0.8rem;
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.debug-header {
+    padding: 0.6rem 0.9rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    font-weight: 600;
+    cursor: pointer;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px 8px 0 0;
+}
+
+.debug-header button {
+    background: none;
+    border: none;
+    color: #9ca3af;
+    cursor: pointer;
+}
+
+.debug-body {
+    padding: 0.75rem 0.9rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.debug-body.hidden {
+    display: none;
+}
+
+.dev-debug-panel.collapsed {
+    width: auto;
+    min-width: 260px;
+}
+
+.dev-debug-panel.collapsed .debug-header {
+    border-radius: 8px;
+    border-bottom: none;
+}
+
+.debug-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.debug-row span { color: #9ca3af; }
+.debug-row code {
+    background: rgba(255, 255, 255, 0.1);
+    padding: 0.1rem 0.3rem;
+    border-radius: 4px;
+    font-family: monospace;
+}
+
+

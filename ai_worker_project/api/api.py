@@ -32,8 +32,8 @@ def get_orchestrator(request: Request) -> Orchestrator:
 
 class TaskCreateRequest(BaseModel):
     task: str
-    max_steps: int = 15
-    max_seconds: int = 300
+    max_steps: int = 100
+    max_seconds: int = 600
 
 @router.post("/runs")
 async def create_run(
@@ -42,7 +42,8 @@ async def create_run(
 ):
     """Submits a new task to the agent."""
     run = Run(
-        task_description=req.task
+        task_description=req.task,
+        max_steps=req.max_steps
     )
     orchestrator.save_run(run)
 

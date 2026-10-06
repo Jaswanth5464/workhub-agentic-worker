@@ -1,16 +1,22 @@
 import logging
-import json
-import re
 from ai_worker_project.tools.base import Tool, ToolResult, RiskLevel
+from workhub_project.services.expense_service import ExpenseService
+from workhub_project.services.leave_service import LeaveService
+from workhub_project.services.task_service import TaskService
+from workhub_project.services.employee_service import EmployeeService
 
 logger = logging.getLogger(__name__)
 
-from workhub_project.database.db_utils import _read_mock_db, _write_mock_db
+expense_service = ExpenseService()
+leave_service = LeaveService()
+task_service = TaskService()
+emp_service = EmployeeService()
 
 class ManageExpenseTool(Tool):
     name = "manage_expense"
-    description = "Approves or rejects a pending employee expense."
-    risk_level = RiskLevel.HIGH # Requires approval because it's a financial action
+    description = "Approves or rejects a pending employee expense directly in SQLite."
+    risk_level = RiskLevel.HIGH
+    effect = "write"
     
     parameters = {
         "type": "object",
@@ -23,21 +29,19 @@ class ManageExpenseTool(Tool):
     
     async def execute(self, expense_id: str, action: str, **kwargs) -> ToolResult:
         try:
-            db = _read_mock_db()
-            expense = next((e for e in db["expenses"] if e["id"] == expense_id), None)
+            expense = expense_service.get_by_id(expense_id)
             if not expense:
                 return ToolResult(success=False, error="Expense not found")
             
-            expense["status"] = action + "d" if action.endswith("e") else action + "ed"
-            _write_mock_db(db)
-            
-            return ToolResult(success=True, data={"status": f"Expense {action}d successfully."})
+            new_status = action + "d" if action.endswith("e") else action + "ed"
+            updated = expense_service.update(expense_id, {"status": new_status})
+            return ToolResult(success=True, data={"status": f"Expense {action}d successfully.", "record": updated})
         except Exception as e:
             return ToolResult(success=False, error=str(e))
 
 class ManageLeaveRequestTool(Tool):
     name = "manage_leave"
-    description = "Approves or rejects a pending employee leave request."
+    description = "Approves or rejects a pending employee leave request directly in SQLite."
     risk_level = RiskLevel.HIGH
     effect = "write"
     
@@ -52,21 +56,50 @@ class ManageLeaveRequestTool(Tool):
     
     async def execute(self, leave_id: str, action: str, **kwargs) -> ToolResult:
         try:
-            db = _read_mock_db()
-            leave = next((l for l in db.get("leaves", []) if l["id"] == leave_id), None)
+            leave = leave_service.get_by_id(leave_id)
             if not leave:
                 return ToolResult(success=False, error="Leave request not found")
             
-            leave["status"] = "cancelled" if action == "cancel" else (action + "d" if action.endswith("e") else action + "ed")
-            _write_mock_db(db)
-            
-            return ToolResult(success=True, data={"status": f"Leave {leave_id} {action}d successfully."})
+            new_status = "cancelled" if action == "cancel" else (action + "d" if action.endswith("e") else action + "ed")
+            updated = leave_service.update(leave_id, {"status": new_status})
+            return ToolResult(success=True, data={"status": f"Leave {leave_id} {action}d successfully.", "record": updated})
+        except Exception as e:
+            return ToolResult(success=False, error=str(e))
+
+class ListAssignableEmployeesTool(Tool):
+    name = "list_assignable_employees"
+    description = "Lists all current active employees from SQLite with their ID, name, and department to easily select for task assignments, expense filing, or leave approvals."
+    risk_level = RiskLevel.LOW
+    effect = "read"
+    
+    parameters = {
+        "type": "object",
+        "properties": {
+            "department": {"type": "string", "description": "Optional department filter"},
+            "limit": {"type": "integer", "description": "Max employees to return (default 100)"}
+        }
+    }
+    
+    async def execute(self, department: str = None, limit: int = 100, **kwargs) -> ToolResult:
+        try:
+            filters = {"status": "active"}
+            if department:
+                filters["department"] = department
+            employees = emp_service.get_all(limit=limit, filters=filters)
+            formatted = [{
+                "id": e["id"],
+                "name": e["name"],
+                "department": e.get("department", "General"),
+                "role": e.get("role", "Staff"),
+                "label": f"{e['name']} ({e['id']} - {e.get('department', 'General')})"
+            } for e in employees]
+            return ToolResult(success=True, data={"employees": formatted, "count": len(formatted)})
         except Exception as e:
             return ToolResult(success=False, error=str(e))
 
 class HRTaskManagementTool(Tool):
     name = "manage_hr_task"
-    description = "Creates a new HR task or updates the status of an existing task."
+    description = "Creates a new HR task or updates the status of an existing task directly in SQLite. You can assign tasks to any employee by Name (e.g., 'Jane Smith') or Employee ID (e.g., 'EMP-002') or 'Admin'."
     risk_level = RiskLevel.HIGH
     effect = "write"
     
@@ -76,50 +109,50 @@ class HRTaskManagementTool(Tool):
             "task_id": {"type": "string", "description": "Optional. The ID of the task to update."},
             "title": {"type": "string", "description": "Optional. Title for a new task."},
             "status": {"type": "string", "enum": ["pending", "in_progress", "completed", "cancelled"], "description": "New status for the task."},
-            "assignedTo": {"type": "string", "description": "Employee ID or Department Head to assign task to."}
+            "assignedTo": {"type": "string", "description": "Employee Name, Employee ID (e.g. EMP-002), or 'Admin' to assign task to."}
         },
         "required": []
     }
     
     async def execute(self, **kwargs) -> ToolResult:
         try:
-            db = _read_mock_db()
             task_id = kwargs.get("task_id")
             title = kwargs.get("title")
             status = kwargs.get("status")
             assigned_to = kwargs.get("assignedTo") or kwargs.get("assigned_to")
             
+            # Resolve assigned_to if employee ID is provided
+            if assigned_to and assigned_to.upper().startswith("EMP-"):
+                matched = emp_service.get_by_id(assigned_to)
+                if matched:
+                    assigned_to = matched["name"]
+
             if task_id:
-                task = next((t for t in db.get("tasks", []) if t["id"] == task_id), None)
+                task = task_service.get_by_id(task_id)
                 if not task:
                     return ToolResult(success=False, error="Task not found")
-                if status:
-                    task["status"] = status
-                if title:
-                    task["title"] = title
-                if assigned_to:
-                    task["assignedTo"] = assigned_to
+                update_fields = {}
+                if status: update_fields["status"] = status
+                if title: update_fields["title"] = title
+                if assigned_to: update_fields["assignedTo"] = assigned_to
+                updated = task_service.update(task_id, update_fields)
+                return ToolResult(success=True, data={"status": "Task updated successfully.", "record": updated})
             else:
-                new_task = {
-                    "id": f"TSK-{len(db.get('tasks', [])) + 100}",
+                new_task = task_service.create({
                     "title": title or "New HR Task",
                     "status": status or "pending",
                     "assignedTo": assigned_to or "Admin",
-                    "dueDate": "2026-10-30",
-                    "priority": "medium"
-                }
-                if "tasks" not in db:
-                    db["tasks"] = []
-                db["tasks"].append(new_task)
-                
-            _write_mock_db(db)
-            return ToolResult(success=True, data={"status": "Task updated successfully."})
+                    "dueDate": kwargs.get("due_date") or kwargs.get("dueDate") or "2026-10-30",
+                    "priority": kwargs.get("priority") or "medium"
+                })
+                return ToolResult(success=True, data={"status": "Task created successfully.", "record": new_task})
         except Exception as e:
             return ToolResult(success=False, error=str(e))
 
+
 class UpdateEmployeeProfileTool(Tool):
     name = "update_employee_profile"
-    description = "Updates an employee's profile information (e.g. emergency contact, phone, status, role)."
+    description = "Updates an employee's profile information directly in SQLite."
     risk_level = RiskLevel.HIGH
     effect = "write"
     
@@ -136,20 +169,19 @@ class UpdateEmployeeProfileTool(Tool):
     
     async def execute(self, employee_id: str, **kwargs) -> ToolResult:
         try:
-            db = _read_mock_db()
-            employee = next((e for e in db.get("employees", []) if e["id"] == employee_id), None)
+            employee = emp_service.get_by_id(employee_id)
             if not employee:
                 return ToolResult(success=False, error="Employee not found")
             
+            update_data = {}
             if "emergency_contact" in kwargs:
-                employee["emergencyContact"] = kwargs["emergency_contact"]
+                update_data["emergencyContact"] = kwargs["emergency_contact"]
             if "phone" in kwargs:
-                employee["phone"] = kwargs["phone"]
+                update_data["phone"] = kwargs["phone"]
             if "status" in kwargs:
-                employee["status"] = kwargs["status"]
+                update_data["status"] = kwargs["status"]
                 
-            _write_mock_db(db)
-            return ToolResult(success=True, data={"status": f"Employee {employee_id} profile updated successfully."})
+            updated = emp_service.update(employee_id, update_data)
+            return ToolResult(success=True, data={"status": f"Employee {employee_id} profile updated successfully.", "record": updated})
         except Exception as e:
             return ToolResult(success=False, error=str(e))
-

@@ -3,113 +3,157 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WorkHub - Employee Operations Management</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <title>WorkHub Web - Enterprise Operations & Automation Hub</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
     <div class="app-container">
         <!-- Sidebar Navigation -->
-        <aside class="sidebar">
+        <aside class="sidebar" role="navigation" aria-label="Main Navigation">
             <div class="logo-container">
-                <i class="fa-solid fa-layer-group logo-icon"></i>
-                <h2>WorkHub<span>HR</span></h2>
+                <i class="fa-solid fa-layer-group logo-icon" aria-hidden="true"></i>
+                <h2>WorkHub<span>WEB</span></h2>
             </div>
             
-            <nav class="nav-menu">
-                <div class="nav-section">MAIN</div>
-                <a href="#" class="nav-item active" data-view="dashboard">
-                    <i class="fa-solid fa-chart-pie"></i> Dashboard
+            <nav class="nav-menu" aria-label="WorkHub Workspace Modules">
+                <div class="nav-section" role="heading" aria-level="3">OVERVIEW</div>
+                <a href="#" class="nav-item active" data-view="dashboard" data-testid="nav-dashboard" aria-current="page" aria-label="Dashboard">
+                    <i class="fa-solid fa-chart-pie" aria-hidden="true"></i> Dashboard
                 </a>
-                <a href="#" class="nav-item" data-view="employees">
-                    <i class="fa-solid fa-users"></i> Directory
+                <a href="#" class="nav-item" data-view="employees" data-testid="nav-employees" aria-label="Employees">
+                    <i class="fa-solid fa-users" aria-hidden="true"></i> Employees
                 </a>
-                
-                <div class="nav-section">OPERATIONS</div>
-                <a href="#" class="nav-item" data-view="expenses">
-                    <i class="fa-solid fa-file-invoice-dollar"></i> Expenses <span class="badge warning">3</span>
-                </a>
-                <a href="#" class="nav-item" data-view="leaves">
-                    <i class="fa-solid fa-calendar-check"></i> Leave Requests
-                </a>
-                <a href="#" class="nav-item" data-view="benefits">
-                    <i class="fa-solid fa-heart-pulse"></i> Benefits
+                <a href="#" class="nav-item" data-view="departments" data-testid="nav-departments" aria-label="Departments">
+                    <i class="fa-solid fa-sitemap" aria-hidden="true"></i> Departments
                 </a>
                 
-                <div class="nav-section">WORKSPACE</div>
-                <a href="#" class="nav-item" data-view="tasks">
-                    <i class="fa-solid fa-list-check"></i> Tasks <span class="badge danger">1</span>
+                <div class="nav-section" role="heading" aria-level="3">OPERATIONS & FINANCE</div>
+                <a href="#" class="nav-item" data-view="leaves" data-testid="nav-leaves" aria-label="Leave Requests">
+                    <i class="fa-solid fa-calendar-check" aria-hidden="true"></i> Leave Requests <span class="badge warning" id="badge-leaves" style="display:none;" aria-live="polite">0</span>
                 </a>
-                <a href="#" class="nav-item" data-view="emails">
-                    <i class="fa-solid fa-envelope"></i> Inbox <span class="badge primary">5</span>
+                <a href="#" class="nav-item" data-view="expenses" data-testid="nav-expenses" aria-label="Expenses">
+                    <i class="fa-solid fa-file-invoice-dollar" aria-hidden="true"></i> Expenses <span class="badge warning" id="badge-expenses" style="display:none;" aria-live="polite">0</span>
                 </a>
-                <a href="#" class="nav-item" data-view="documents">
-                    <i class="fa-solid fa-folder-open"></i> Documents
+                <a href="#" class="nav-item" data-view="tasks" data-testid="nav-tasks" aria-label="Tasks">
+                    <i class="fa-solid fa-list-check" aria-hidden="true"></i> Tasks <span class="badge danger" id="badge-tasks" style="display:none;" aria-live="polite">0</span>
+                </a>
+                <a href="#" class="nav-item" data-view="approvals" data-testid="nav-approvals" aria-label="Approval Center">
+                    <i class="fa-solid fa-shield-halved" aria-hidden="true"></i> Approval Center <span class="badge primary" id="badge-approvals" style="display:none;" aria-live="polite">0</span>
+                </a>
+                
+                <div class="nav-section" role="heading" aria-level="3">WORKSPACE & ASSETS</div>
+                <a href="#" class="nav-item" data-view="documents" data-testid="nav-documents" aria-label="Documents">
+                    <i class="fa-solid fa-folder-open" aria-hidden="true"></i> Documents
+                </a>
+                <a href="#" class="nav-item" data-view="reports" data-testid="nav-reports" aria-label="Reports & Analytics">
+                    <i class="fa-solid fa-chart-line" aria-hidden="true"></i> Reports & Analytics
+                </a>
+                <a href="#" class="nav-item" data-view="settings" data-testid="nav-settings" aria-label="Settings & Chaos">
+                    <i class="fa-solid fa-sliders" aria-hidden="true"></i> Settings & Chaos
                 </a>
             </nav>
             
-            <div class="user-profile">
-                <img src="https://ui-avatars.com/api/?name=Admin+User&background=2563eb&color=fff" alt="Admin" class="avatar">
+            <div class="user-profile" aria-label="Logged-in User Profile">
+                <img src="https://ui-avatars.com/api/?name=Admin+User&background=2563eb&color=fff" alt="Profile avatar of Admin User" class="avatar">
                 <div class="user-info">
                     <strong>Admin User</strong>
-                    <span>HR Manager</span>
+                    <span>HR & Operations Manager</span>
                 </div>
             </div>
         </aside>
 
         <!-- Main Content Area -->
-        <main class="main-content">
-            <header class="topbar">
+        <main class="main-content" id="main-content" role="main" aria-label="WorkHub Content Area">
+            <header class="topbar" role="banner">
+                <div class="search-bar-header">
+                    <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                    <input type="text" id="global-search" placeholder="Search across employees, expenses, tasks..." data-testid="global-search-input" aria-label="Search employees, expenses, tasks, and documents">
+                </div>
                 <div class="topbar-actions">
-                    <button class="icon-btn"><i class="fa-regular fa-bell"></i></button>
-                    <button class="btn-primary" id="ai-help-btn"><i class="fa-solid fa-robot"></i> Ask AI Worker</button>
+                    <button class="icon-btn" id="edge-case-toggle-btn" title="Edge Case & Chaos Mode" aria-label="Toggle Chaos and Edge Case Settings"><i class="fa-solid fa-bolt" aria-hidden="true"></i></button>
+                    <button class="btn-primary" id="ai-help-btn" data-testid="ask-ai-worker-btn" aria-label="Ask Autonomous AI Task Worker"><i class="fa-solid fa-robot" aria-hidden="true"></i> Ask AI Worker</button>
                 </div>
             </header>
 
-            <div id="view-container" class="view-container">
+            <div id="toast-container" class="toast-container" aria-live="assertive" role="status"></div>
+
+            <div id="view-container" class="view-container" role="region" aria-label="Current Workspace View">
                 <!-- Dynamic Content Loads Here -->
             </div>
         </main>
     </div>
 
-    <!-- Approval Modal (For Agent Interaction) -->
-    <div id="approval-modal" class="modal-overlay hidden">
+    <!-- Developer HUD / Debug Panel -->
+    <div id="dev-debug-panel" class="dev-debug-panel" role="complementary" aria-label="AI Watchdog and Telemetry HUD">
+        <div class="debug-header" id="debug-header">
+            <span><i class="fa-solid fa-terminal" aria-hidden="true"></i> AI Watchdog & Telemetry HUD</span>
+            <button id="toggle-debug-hud" aria-label="Toggle Telemetry HUD View"><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
+        </div>
+        <div class="debug-body" id="debug-body">
+            <div class="debug-row"><span>URL:</span> <code id="debug-url">http://localhost:3000/</code></div>
+            <div class="debug-row"><span>View:</span> <strong id="debug-view">dashboard</strong></div>
+            <div class="debug-row"><span>DOM Hash:</span> <code id="debug-hash">a8f93e...</code></div>
+            <div class="debug-row"><span>Watchdog:</span> <span class="badge success" id="debug-watchdog">HEALTHY</span></div>
+            <div class="debug-row"><span>Last Action:</span> <span id="debug-action">Ready</span></div>
+            <div class="debug-row"><span>SSE Stream:</span> <span class="badge primary" id="debug-sse">LIVE CONNECTED</span></div>
+        </div>
+    </div>
+
+    <!-- Confirmation Dialog Modal -->
+    <div id="confirm-dialog-modal" class="modal-overlay hidden" data-testid="confirm-dialog-modal" role="dialog" aria-modal="true" aria-labelledby="confirm-modal-title" aria-describedby="confirm-modal-message">
+        <div class="modal confirm-modal">
+            <div class="modal-header">
+                <h3 id="confirm-modal-title"><i class="fa-solid fa-triangle-exclamation text-warning" aria-hidden="true"></i> Confirm Action</h3>
+                <button class="close-modal" id="btn-close-confirm" aria-label="Close confirmation dialog"><i class="fa-solid fa-times" aria-hidden="true"></i></button>
+            </div>
+            <div class="modal-body" id="confirm-modal-body">
+                <p id="confirm-modal-message">Are you sure you want to perform this operation?</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="btn-cancel-confirm" data-testid="btn-confirm-cancel" aria-label="Cancel operation">Cancel</button>
+                <button class="btn-danger" id="btn-proceed-confirm" data-testid="btn-confirm-proceed" aria-label="Confirm and proceed">Confirm & Proceed</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Approval Modal (For Agent HITL Interaction) -->
+    <div id="approval-modal" class="modal-overlay hidden" data-testid="approval-modal" role="dialog" aria-modal="true" aria-labelledby="approval-modal-title">
         <div class="modal">
             <div class="modal-header">
-                <h3><i class="fa-solid fa-shield-halved text-warning"></i> Action Requires Approval</h3>
-                <button class="close-modal"><i class="fa-solid fa-times"></i></button>
+                <h3 id="approval-modal-title"><i class="fa-solid fa-shield-halved text-warning" aria-hidden="true"></i> Action Requires Authorization</h3>
+                <button class="close-modal" aria-label="Close authorization modal"><i class="fa-solid fa-times" aria-hidden="true"></i></button>
             </div>
             <div class="modal-body" id="approval-content">
                 <!-- Dynamic Approval Content -->
             </div>
             <div class="modal-footer">
-                <button class="btn-secondary" id="btn-reject">Reject</button>
-                <button class="btn-primary" id="btn-approve">Approve</button>
+                <button class="btn-secondary" id="btn-reject" data-testid="btn-approval-reject" aria-label="Reject action">Reject</button>
+                <button class="btn-primary" id="btn-approve" data-testid="btn-approval-approve" aria-label="Approve action">Approve</button>
             </div>
         </div>
     </div>
 
     <!-- AI Agent Modal -->
-    <div id="ai-modal" class="modal-overlay hidden">
+    <div id="ai-modal" class="modal-overlay hidden" data-testid="ai-agent-modal" role="dialog" aria-modal="true" aria-labelledby="ai-modal-title">
         <div class="modal" style="max-width: 600px;">
             <div class="modal-header">
-                <h3><i class="fa-solid fa-robot"></i> AI Task Worker</h3>
-                <button class="close-modal" id="close-ai-modal"><i class="fa-solid fa-times"></i></button>
+                <h3 id="ai-modal-title"><i class="fa-solid fa-robot" aria-hidden="true"></i> AI Task Worker</h3>
+                <button class="close-modal" id="close-ai-modal" aria-label="Close AI Task Worker modal"><i class="fa-solid fa-times" aria-hidden="true"></i></button>
             </div>
             <div class="modal-body">
-                <div id="ai-chat-history" style="height: 300px; overflow-y: auto; background: #f9fafb; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem; border: 1px solid #e5e7eb; display: flex; flex-direction: column; gap: 0.5rem;">
-                    <div style="padding: 0.5rem; background: #e0f2fe; border-radius: 0.5rem; align-self: flex-start; max-width: 80%;">Hello! I am your AI Task Worker. What can I do for you today?</div>
+                <div id="ai-chat-history" style="height: 300px; overflow-y: auto; background: #f9fafb; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem; border: 1px solid #e5e7eb; display: flex; flex-direction: column; gap: 0.5rem;" role="log" aria-live="polite" aria-label="Conversation log with AI worker">
+                    <div style="padding: 0.5rem; background: #e0f2fe; border-radius: 0.5rem; align-self: flex-start; max-width: 80%;">Hello! I am your autonomous AI Task Worker. What can I help you automate today?</div>
                 </div>
                 <div style="display: flex; gap: 0.5rem;">
-                    <input type="text" id="ai-task-input" class="form-control" placeholder="e.g. Give all employees a 5% raise" style="flex: 1;" />
-                    <button class="btn-primary" id="btn-submit-task">Send</button>
+                    <input type="text" id="ai-task-input" class="form-control" placeholder="e.g. Create a new employee named John Smith in Engineering" style="flex: 1;" data-testid="ai-task-input" aria-label="Type instructions for the AI agent" />
+                    <button class="btn-primary" id="btn-submit-task" data-testid="ai-task-send-btn" aria-label="Send instructions to AI worker">Send</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <script src="mockData.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

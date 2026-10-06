@@ -35,18 +35,22 @@ def get_fallback_chain(complexity: str = "medium") -> List[str]:
         
     # Dynamically build based on which API keys are actually present in the environment!
     chain = []
-    if os.environ.get("GEMINI_API_KEY"):
-        chain.append("gemini")
     if os.environ.get("LLM_API_KEY"): # Groq
         chain.append("groq")
+    if os.environ.get("OPENROUTER_API_KEY"):
+        chain.append("openrouter")
+    if os.environ.get("MISTRAL_API_KEY"):
+        chain.append("mistral")
+    if os.environ.get("GEMINI_API_KEY"):
+        chain.append("gemini")
     if os.environ.get("NVIDIA_API_KEY"):
         chain.append("nvidia")
     if os.environ.get("OLLAMA_BASE_URL"):
         chain.append("ollama")
         
-    # If no specific keys were found, default to trying gemini and groq first
+    # If no specific keys were found, default to trying groq, openrouter, and mistral first
     if not chain:
-        return ["gemini", "groq", "nvidia"]
+        return ["groq", "openrouter", "mistral", "nvidia", "gemini"]
         
     return chain
 
@@ -107,6 +111,24 @@ async def _call_openai_compatible(
         if response.status_code == 429:
             raise RateLimitError(f"Rate limited by {base_url}")
         elif response.status_code != 200:
+            try:
+                err_data = response.json()
+                err_obj = err_data.get("error", {})
+                if err_obj.get("code") == "tool_use_failed" and "failed_generation" in err_obj:
+                    fg = err_obj["failed_generation"]
+                    try:
+                        tool_call = json.loads(fg)
+                        return json.dumps({
+                            "thought": f"Executing {tool_call.get('name')}",
+                            "action": {
+                                "tool": tool_call.get("name"),
+                                "args": tool_call.get("arguments", {})
+                            }
+                        })
+                    except Exception:
+                        return fg
+            except Exception:
+                pass
             raise LLMError(f"API error {response.status_code}: {response.text}")
 
         data = response.json()
@@ -220,9 +242,84 @@ async def call_gemini(system_prompt: str, messages: List[Dict[str, str]], **kwar
         raise LLMError(f"Gemini failed: {e}")
 
 
+async def call_openrouter(system_prompt: str, messages: List[Dict[str, str]], **kwargs) -> str:
+    api_key = os.environ.get("OPENROUTER_API_KEY")
+    if not api_key:
+        raise LLMError("OPENROUTER_API_KEY not set")
+    model = os.environ.get("OPENROUTER_MODEL", "apodex/apodex-1.1-mini:free")
+    
+    # Attempt primary model, fallback to :free or base if 404
+    try:
+        return await _call_openai_compatible(
+            base_url="https://openrouter.ai/api/v1/chat/completions",
+            api_key=api_key,
+            model=model,
+            system_prompt=system_prompt,
+            messages=messages,
+            temperature=kwargs.get("temperature", 0.0),
+            max_tokens=kwargs.get("max_tokens", 4000),
+            timeout=kwargs.get("timeout", int(os.environ.get("LLM_TIMEOUT_SECONDS", 120)))
+        )
+    except LLMError as e:
+        if "404" in str(e):
+            alt_model = "apodex/apodex-1.1-mini:free" if ":free" not in model else "apodex/apodex-1.1-mini"
+            logger.info(f"OpenRouter 404 with {model}, trying alternative {alt_model}")
+            return await _call_openai_compatible(
+                base_url="https://openrouter.ai/api/v1/chat/completions",
+                api_key=api_key,
+                model=alt_model,
+                system_prompt=system_prompt,
+                messages=messages,
+                temperature=kwargs.get("temperature", 0.0),
+                max_tokens=kwargs.get("max_tokens", 4000),
+                timeout=kwargs.get("timeout", int(os.environ.get("LLM_TIMEOUT_SECONDS", 120)))
+            )
+        raise
+
+
+async def call_mistral(system_prompt: str, messages: List[Dict[str, str]], **kwargs) -> str:
+    api_key = os.environ.get("MISTRAL_API_KEY")
+    if not api_key:
+        raise LLMError("MISTRAL_API_KEY not set")
+    model = os.environ.get("MISTRAL_MODEL", "open-mistral-7b")
+
+    try:
+        return await _call_openai_compatible(
+            base_url="https://api.mistral.ai/v1/chat/completions",
+            api_key=api_key,
+            model=model,
+            system_prompt=system_prompt,
+            messages=messages,
+            temperature=kwargs.get("temperature", 0.0),
+            max_tokens=kwargs.get("max_tokens", 4000),
+            timeout=kwargs.get("timeout", int(os.environ.get("LLM_TIMEOUT_SECONDS", 120)))
+        )
+    except RateLimitError:
+        # If rate limited on mistral-small, try open-mistral-7b or codestral
+        fallback_models = ["open-mistral-7b", "codestral-latest"]
+        for fb_model in fallback_models:
+            if fb_model != model:
+                try:
+                    return await _call_openai_compatible(
+                        base_url="https://api.mistral.ai/v1/chat/completions",
+                        api_key=api_key,
+                        model=fb_model,
+                        system_prompt=system_prompt,
+                        messages=messages,
+                        temperature=kwargs.get("temperature", 0.0),
+                        max_tokens=kwargs.get("max_tokens", 4000),
+                        timeout=kwargs.get("timeout", int(os.environ.get("LLM_TIMEOUT_SECONDS", 120)))
+                    )
+                except Exception:
+                    continue
+        raise
+
+
 PROVIDERS = {
-    "nvidia": call_nvidia,
     "groq": call_groq,
+    "openrouter": call_openrouter,
+    "mistral": call_mistral,
+    "nvidia": call_nvidia,
     "gemini": call_gemini,
     "ollama": call_ollama,
 }

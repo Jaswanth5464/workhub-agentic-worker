@@ -18,6 +18,13 @@ export function reducer(state = initialState(), event) {
     switch (event.type) {
         case 'state':
             nextState.currentState = event.state;
+            if (event.state !== 'NEEDS_USER' && event.state !== 'WAITING_APPROVAL') {
+                nextState.pendingQuestion = null;
+                nextState.pendingApproval = null;
+                if (nextState.status === 'blocked_on_human') {
+                    nextState.status = 'running';
+                }
+            }
             break;
         case 'task_started':
             nextState.task = event.task;
@@ -69,6 +76,7 @@ export function reducer(state = initialState(), event) {
                 nextState.currentState = 'DONE';
             }
             nextState.pendingApproval = null;
+            nextState.pendingQuestion = null;
             break;
         case 'approval_required':
             nextState.pendingApproval = event.data || {
@@ -78,9 +86,23 @@ export function reducer(state = initialState(), event) {
                 risk: event.risk || 'HIGH',
                 reason: event.reason || 'Mutating operation requires authorization.'
             };
+            nextState.currentState = 'WAITING_APPROVAL';
+            nextState.status = 'blocked_on_human';
             break;
         case 'approval_resolved':
             nextState.pendingApproval = null;
+            nextState.pendingQuestion = null;
+            if (nextState.currentState === 'NEEDS_USER' || nextState.currentState === 'WAITING_APPROVAL') {
+                nextState.currentState = 'EXECUTING';
+            }
+            if (nextState.status === 'blocked_on_human') {
+                nextState.status = 'running';
+            }
+            break;
+        case 'ask_user':
+            nextState.pendingQuestion = event.question || event.data?.question || (event.args && event.args.question) || 'The agent is requesting your confirmation to proceed.';
+            nextState.currentState = 'NEEDS_USER';
+            nextState.status = 'blocked_on_human';
             break;
         case 'open_inspector':
             nextState.inspectorData = event.data;

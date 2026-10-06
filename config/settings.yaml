@@ -1,6 +1,6 @@
 domain: "hr"
 agent:
-  max_steps: 40
+  max_steps: 100
   default_budget: 10.0
 safety:
   allow_unsafe_writes: false

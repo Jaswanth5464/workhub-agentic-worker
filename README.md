@@ -18,16 +18,19 @@
 
 1. [🌟 Executive Summary](#-executive-summary)
 2. [🎯 Evaluator Q&A: Direct Answers to CentrAlign AI Criteria](#-evaluator-qa-direct-answers-to-centralign-ai-criteria)
-3. [💡 Our 5 Unique Engineering Strategies](#-our-5-unique-engineering-strategies)
-4. [🏢 What is WorkHub? (Environment Simulation)](#-what-is-workhub-environment-simulation)
-5. [🏗️ Complete System Architecture](#-complete-system-architecture)
-6. [🔄 Detailed 4-Facet Execution Loop](#-detailed-4-facet-execution-loop)
-7. [🛡️ Security & Human-In-The-Loop (HITL) Guardrails](#-security--human-in-the-loop-hitl-guardrails)
-8. [🚀 Quick Start & One-Click Run](#-quick-start--one-click-run)
-9. [🧪 Ready-To-Run Benchmark Tasks](#-ready-to-run-benchmark-tasks)
-10. [🔍 Live Verification & Evaluator Evidence](#-live-verification--evaluator-evidence)
-11. [🔮 Known Limitations & Future Roadmap](#-known-limitations--future-roadmap)
-12. [🛠️ Tech Stack & Provider Fallback Chain](#-tech-stack--provider-fallback-chain)
+3. [💡 System Novelty & What Makes Our Solution Special](#-system-novelty--what-makes-our-solution-special)
+4. [✨ Comprehensive Feature Catalog](#-comprehensive-feature-catalog)
+5. [🌐 Playwright Browser Automation Engine](#-playwright-browser-automation-engine)
+6. [💡 Our 5 Unique Engineering Strategies](#-our-5-unique-engineering-strategies)
+7. [🏢 What is WorkHub? (Environment Simulation)](#-what-is-workhub-environment-simulation)
+8. [🏗️ Complete System Architecture](#-complete-system-architecture)
+9. [🔄 Detailed 4-Facet Execution Loop](#-detailed-4-facet-execution-loop)
+10. [🛡️ Security & Human-In-The-Loop (HITL) Guardrails](#-security--human-in-the-loop-hitl-guardrails)
+11. [🚀 Quick Start & One-Click Run](#-quick-start--one-click-run)
+12. [🧪 Ready-To-Run Benchmark Tasks](#-ready-to-run-benchmark-tasks)
+13. [🔍 Live Verification & Evaluator Evidence](#-live-verification--evaluator-evidence)
+14. [🔮 Known Limitations & Future Roadmap](#-known-limitations--future-roadmap)
+15. [🛠️ Tech Stack & Provider Fallback Chain](#-tech-stack--provider-fallback-chain)
 
 ---
 
@@ -100,6 +103,116 @@ Here are clear, simple-English answers addressing every evaluation dimension and
 
 ---
 
+## 💡 System Novelty & What Makes Our Solution Special
+
+While most AI agents in the industry are either pure conversational chatbots or rigid script-runners that break easily, our Autonomous AI Task Worker introduces key innovations that make it enterprise-ready, robust, and truly autonomous:
+
+| # | Novelty & Special Capability | Why It Outperforms Traditional Approaches |
+|:---|:---|:---|
+| **1** | **🧠 Zero-Hardcoding Semantic Web Reasoning** | Traditional web automation tools break whenever a CSS class, DOM hierarchy, or XPath selector changes. Our Playwright engine uses dynamic **WAI-ARIA accessibility semantics** (`get_by_role`, `get_by_label`, `get_by_placeholder`, `get_by_text`). The agent understands web interfaces like a human user. |
+| **2** | **🔄 Dual-Mode Omnichannel Execution** | The worker is not limited to one interface. It can operate **under the hood** via high-speed direct SQL and REST API tools (`mode=ro`, CRUD endpoints) OR **visibly in a browser** via Playwright, seamlessly adapting to whatever interface the user requires. |
+| **3** | **🛡️ Deterministic Verification vs. Hallucinated Completion** | Standard LLM agents simply output "I have updated the records" without checking reality. Our system performs **pre- and post-mutation SQLite state snapshots** and DOM checks. If the database row does not exist with the exact requested state, execution is halted with verifiable diagnostics. |
+| **4** | **⚡ Non-Destructive SPA DOM Stabilization** | Standard automation scripts rely on destructive page reloads (`page.reload()`) during errors, which wipe out single-page app (SPA) modal states, form data, and view history. Our engine uses **non-destructive DOM stabilization**, preserving open modals and recovering element focus dynamically. |
+| **5** | **💬 Realtime Non-Blocking HITL Protocol** | Interactive operator clarification and financial authorization dialogs stream live over Server-Sent Events (SSE). Submitting a response immediately resumes the paused agent loop without page freezes, race conditions, or dropped input. |
+| **6** | **🔁 4-Tier Self-Healing Provider Failover** | Built-in provider fallback: **Groq (Llama 3.3 70B)** ──▶ **Google Gemini 2.5 Flash** ──▶ **NVIDIA NIM** ──▶ **Local Ollama**. If one provider hits a 429 rate limit or timeout, the agent switches mid-task with zero lost progress. |
+
+---
+
+## ✨ Comprehensive Feature Catalog
+
+Our Autonomous AI Task Worker provides a rich suite of capabilities designed for complex, cross-department enterprise workflows:
+
+### 🧠 1. Intelligent Reasoning & Planning
+- **Dynamic Goal Decomposition:** Breaks complex natural language prompts into sequential, verifiable subgoals (`G1`, `G2`, `G3`...).
+- **4-Facet ReAct Execution Cycle:** Every single step follows the strict `DECIDE` ──▶ `GUARD` ──▶ `ACT` ──▶ `VERIFY` lifecycle.
+- **Deep Execution Budget:** Supports up to 100 autonomous steps for multi-page, cross-department workflows without truncation.
+- **Persistent Corporate Memory:** `memorize_fact` and `recall_facts` tools maintain cross-step knowledge for company policies, IDs, and employee names.
+- **Automated Self-Correction:** Loop-breaker detection flags repeated actions and forces alternative strategy paths.
+
+### 🌐 2. Advanced Playwright Browser Automation
+- **Multi-Tab & SPA Navigation:** Handles complex single-page apps (WorkHub Web) with smooth client-side routing.
+- **Semantic Element Discovery:** Automatically discovers buttons, input boxes, dropdown selects, table rows, and modals using natural labels.
+- **Rich Interaction Primitives:** Native support for `click`, `fill`, `select`, `hover`, `press_key`, `upload_file`, `scroll`, `observe`, and `take_screenshot`.
+- **Dynamic Modal & Form Handling:** Accurately fills multi-field modal forms, selects dropdown options by label, and confirms dialog submissions.
+- **Visual State Observation:** Emits structured JSON summaries of interactive DOM elements and SHA-256 DOM hash change tracking.
+
+### 🛡️ 3. Enterprise Safety & Governance
+- **Strict Read-Only Enforcement:** Safe read operations run in SQLite `mode=ro` without elevation.
+- **Human-In-The-Loop (HITL) Gatekeeper:** All data modifications (`INSERT`, `UPDATE`, `DELETE`, status approvals) automatically pause and request human authorization.
+- **Forbidden DDL Query Protection:** Auto-rejects destructive schema alteration commands (`DROP TABLE`, `ALTER TABLE`, `TRUNCATE`).
+- **Sequential Auto-ID Generation:** Prevents database primary key collisions by dynamically computing formatted sequential identifiers (`EMP-045`, `EXP-1046`, `TSK-019`).
+- **Immutable Audit Logging:** Every mutating transaction logs an audit entry to `audit_logs` with timestamps, operator info, and diffs.
+
+### 🖥️ 4. Executive Live UI & Telemetry
+- **Unified Dark-Mode Dashboard:** Modern, sleek interface showing task status, live budget, step counts, and active subgoals.
+- **Interactive Stepper:** Visual pipeline stepper tracking `INGESTION` ──▶ `PLANNING` ──▶ `EXECUTION` ──▶ `VERIFY` ──▶ `COMPLETE`.
+- **Live SSE Event Streaming:** Server-Sent Events stream step-by-step thoughts, guard validations, actions, and observations in real time.
+- **Evaluator Verification Drawer:** Inspect exact database row evidence, SQL queries, and tool payloads with one click.
+- **Instant Response Dialogs:** Operators can reply to clarifying questions or approve actions directly in the stream.
+
+---
+
+## 🌐 Playwright Browser Automation Engine
+
+The AI Task Worker includes a specialized, high-performance browser automation engine built on top of **Microsoft Playwright**. It enables the agent to interact with real enterprise web applications exactly like a human operator.
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────────────────┐
+│                             🌐 PLAYWRIGHT BROWSER WORKER ENGINE                             │
+├─────────────────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                             │
+│   [Natural Language Goal]                                                                   │
+│              │                                                                              │
+│              ▼                                                                              │
+│   [Semantic Target Parser] ──▶ Resolves target using Accessibility Tree & WAI-ARIA          │
+│              │                                                                              │
+│              ▼                                                                              │
+│   [Action Dispatcher] ──▶ Maps action to Playwright Primitive:                              │
+│              │             • open_page(url)       • click(target)     • fill(target, value) │
+│              │             • select(target, val)  • hover(target)     • upload_file(path)   │
+│              │             • scroll(direction)    • press_key(key)    • observe()           │
+│              │                                                                              │
+│              ▼                                                                              │
+│   [DOM Stabilization] ──▶ Waits for networkidle / domcontentloaded (Non-destructive)        │
+│              │                                                                              │
+│              ▼                                                                              │
+│   [Visual State Observer] ──▶ Extracts interactive element tree & verifies DOM updates      │
+│                                                                                             │
+└─────────────────────────────────────────────────────────────────────────────────────────────┘
+```
+
+### 🎯 1. How Semantic Target Resolution Works (Zero-Hardcoding)
+Instead of relying on fragile CSS selectors (like `#main > div:nth-child(3) > button.btn-primary`), our browser tool employs a **hierarchical semantic cascade**:
+
+1. **Role & Accessible Name:** Searches for elements matching Playwright's accessibility roles (`page.get_by_role("button", name="Add Employee")`).
+2. **Explicit Label Association:** Matches form controls connected to `<label for="...">` tags (`page.get_by_label("Employee Full Name")`).
+3. **Placeholder Text:** Locates input fields by their placeholder text (`page.get_by_placeholder("e.g. Jane Smith")`).
+4. **Data-TestID & Semantic Selectors:** Uses standard `[data-testid="..."]` or `[name="..."]` attributes.
+5. **Exact & Substring Text:** Matches visible text content for badges, links, and table cells (`page.get_by_text("Marcus Vance")`).
+
+### 🛠️ 2. Supported Browser Action Primitives
+
+| Browser Action | Purpose & Parameters | Example Agent Invocation |
+|:---|:---|:---|
+| `open_page` | Opens a web page URL and awaits DOM readiness | `{"action": "open_page", "url": "http://localhost:3000/index.html"}` |
+| `observe` | Inspects visible elements, active modals, and DOM hash | `{"action": "observe"}` |
+| `click` | Clicks buttons, navigation tabs, links, or rows | `{"action": "click", "target": "Employees"}` |
+| `fill` | Fills or replaces text in form inputs and textareas | `{"action": "fill", "target": "Employee Full Name", "value": "Jane Smith"}` |
+| `select` | Selects options in dropdown menus by visible text or value | `{"action": "select", "target": "Department", "value": "Engineering"}` |
+| `hover` | Hovers over elements to trigger tooltips or dropdowns | `{"action": "hover", "target": "Profile Menu"}` |
+| `press_key` | Dispatches keyboard events (`Enter`, `Escape`, `Tab`) | `{"action": "press_key", "key": "Enter"}` |
+| `upload_file` | Attaches files to document upload inputs | `{"action": "upload_file", "target": "Upload Receipt", "file_path": "receipt.pdf"}` |
+| `scroll` | Scrolls the viewport (`up`, `down`, `top`, `bottom`) | `{"action": "scroll", "direction": "down"}` |
+| `take_screenshot` | Captures visual proof of current browser state | `{"action": "take_screenshot"}` |
+
+### 🛡️ 3. Resilient Single-Page Application (SPA) Recovery
+When dealing with dynamic JavaScript applications (like React, Vue, or Vanilla JS SPAs):
+- **No Lost Context:** The agent never runs destructive page reloads that close open modal dialogs or discard unsaved form fields.
+- **Dynamic DOM Retries:** If an element is temporarily obscured during an animation, the engine automatically awaits element stability and retries smoothly.
+- **Live Observation Loop:** Every action returns an updated observation of the DOM so the LLM knows immediately if a modal opened, a notification appeared, or a table re-rendered.
+
+---
+
 ## 💡 Our 5 Unique Engineering Strategies
 
 | # | Pillar | Implementation & Impact |
@@ -130,26 +243,28 @@ Here are clear, simple-English answers addressing every evaluation dimension and
 
 ## 🏗️ Complete System Architecture
 
+Our Autonomous AI Task Worker is built with a **modular, dual-mode enterprise architecture** that supports both high-speed direct database/API manipulation and full-fidelity visual browser automation via Playwright:
+
 ```mermaid
 flowchart TD
-    subgraph UI_Layer ["🖥️ Frontend Layer (Port 3002)"]
+    subgraph UI_Layer ["🖥️ Frontend & Operator Dashboard (Port 3002)"]
         UI["Modern Web Workspace (frontend-ai)"]
-        SubgoalBar["Dynamic Subgoal Timeline"]
-        HITL_Panel["⚠️ Human Authorization Required Card"]
-        VerifyDrawer["🔍 Live Database Evidence Drawer"]
+        SubgoalBar["Dynamic Subgoal Timeline (G1, G2...)"]
+        HITL_Panel["💬 Operator Confirmation & Authorization Dialog"]
+        VerifyDrawer["🔍 Live Database & DOM Evidence Drawer"]
     end
 
     subgraph API_Layer ["⚡ FastAPI Backend Server (Port 8001)"]
-        API["FastAPI Orchestrator (/api/runs)"]
-        SSE["Server-Sent Events (SSE) Streamer"]
-        ApprovalQ["Async Approval Queue (asyncio.Queue)"]
+        API["FastAPI Orchestrator (/api/runs, /approve)"]
+        SSE["Server-Sent Events (SSE) Streamer (seq-safe)"]
+        ApprovalQ["Async Approval & Clarification Queue (asyncio.Queue)"]
     end
 
     subgraph Core_Agent ["🧠 Agentic Execution Core"]
         Planner["Dynamic Subgoal Decomposition Engine"]
-        LoopEngine["4-Facet ReAct Loop Engine"]
-        GuardEngine["Security & DDL Guardrail Policy"]
-        MemoryStore["Company Memory & Fact Store"]
+        LoopEngine["4-Facet ReAct Loop (DECIDE ➔ GUARD ➔ ACT ➔ VERIFY)"]
+        GuardEngine["Security Guard (mode=ro & DDL Lockdown)"]
+        MemoryStore["Persistent Corporate Fact Store"]
         
         subgraph Fallback_Chain ["🛡️ Resilient Multi-Provider LLM Fallback"]
             Groq["1. Groq (Llama 3.3 70B)"]
@@ -160,12 +275,29 @@ flowchart TD
         end
     end
 
-    subgraph Tool_Data_Layer ["📦 Tool Registry & Database (51 Tools)"]
-        Registry["Tool Registry (51 Tools)"]
-        SQLTool["SQLQueryTool (mode=ro / Write Unlocked)"]
-        CRUD["Service Layer (Employees, Expenses, Tasks, Leaves)"]
-        DB[("SQLite Database<br/>company_database.sqlite")]
+    subgraph Dual_Execution ["⚙️ Dual-Mode Execution Layer"]
+        subgraph Browser_Branch ["🌐 Browser Automation Mode (Playwright)"]
+            PW["Playwright Browser Engine (Chromium)"]
+            TargetResolver["Semantic WAI-ARIA Target Resolver"]
+            DOMStabilizer["Non-Destructive DOM Stabilizer"]
+            WorkHubWeb["🏢 WorkHub Web App (localhost:3000)"]
+            PW --> TargetResolver --> DOMStabilizer --> WorkHubWeb
+        end
+
+        subgraph Direct_Branch ["🗄️ Direct Database & API Mode"]
+            Registry["Tool Registry (51 Custom Tools)"]
+            SQLTool["SQLQueryTool (mode=ro / Write-Elevated)"]
+            CRUD["Service Layer (Employees, Expenses, Tasks, Leaves)"]
+            AutoID["Sequential Auto-ID Generator (EMP-xxx, EXP-xxxx)"]
+            AuditLog["Immutable Audit Logger (audit_logs table)"]
+            DB[("SQLite Database<br/>company_database.sqlite")]
+            Registry --> SQLTool & CRUD --> AutoID --> AuditLog --> DB
+        end
+    end
+
+    subgraph State_Sync ["🔄 Bidirectional State Sync"]
         MockSync["Bidirectional mockData.js Sync"]
+        DB <--> MockSync <--> WorkHubWeb
     end
 
     UI -->|POST /api/runs| API
@@ -174,18 +306,41 @@ flowchart TD
     LoopEngine --> Fallback_Chain
     LoopEngine --> GuardEngine
 
-    GuardEngine -- "Write Detected" --> ApprovalQ
+    GuardEngine -- "Mutation Detected" --> ApprovalQ
     ApprovalQ --> HITL_Panel
-    HITL_Panel -- "User Approves" --> ApprovalQ
-    ApprovalQ -- "approval_granted=True" --> Registry
+    HITL_Panel -- "User Confirms / Approves" --> ApprovalQ
+    ApprovalQ -- "approval_granted=True" --> Registry & PW
 
-    Registry --> SQLTool & CRUD
-    SQLTool & CRUD --> DB
-    DB --> MockSync
+    LoopEngine -->|Browser Commands| PW
+    LoopEngine -->|Data Commands| Registry
 
     LoopEngine --> SSE
     SSE --> UI & SubgoalBar & VerifyDrawer
 ```
+
+### 🧩 Subsystems Explained in Simple English:
+
+1. **Frontend Operator Console (`frontend-ai`):**
+   - Provides a clean visual command center where users submit tasks in plain English.
+   - Streams live thoughts, guard checks, and tool actions without reloading.
+   - Renders instant, non-blocking confirmation dialogs whenever human input or financial authorization is required.
+
+2. **FastAPI Backend Server & SSE Pipeline:**
+   - Exposes RESTful endpoints for task creation, operator approval, and cancellation.
+   - Manages asynchronous queues to pause and resume the execution loop cleanly.
+   - Streams sequenced JSON events over SSE for reliable, real-time UI synchronization.
+
+3. **Autonomous Reasoning Core & Fallback Chain:**
+   - Breaks complex tasks into clear, bite-sized subgoals (`G1`, `G2`, `G3`).
+   - Executes through the 4-Facet ReAct cycle: `DECIDE` (think) ➔ `GUARD` (safety check) ➔ `ACT` (execute) ➔ `VERIFY` (verify state).
+   - Automatically switches between Groq, Gemini, NVIDIA, and Ollama if any API experiences rate limits or network issues.
+
+4. **Dual-Mode Execution Layer:**
+   - **Mode A (Browser Automation):** Uses Microsoft Playwright to open web pages, click navigation buttons, fill out modal forms, and observe live web screens using WAI-ARIA semantic targets.
+   - **Mode B (Direct Database & API):** Uses 51 specialized tools to run direct SQL queries in read-only mode, mutate records upon authorization, assign sequential primary keys, and record audit trails.
+
+5. **Bidirectional State Synchronization:**
+   - Any change made by the browser worker or the SQL tools is immediately persisted to the active SQLite database and synchronized with the frontend mock dataset, keeping all interfaces consistent.
 
 ---
 

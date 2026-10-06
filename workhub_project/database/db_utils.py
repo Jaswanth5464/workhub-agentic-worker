@@ -1,83 +1,43 @@
 import sqlite3
-import json
 import os
+from typing import List, Dict, Any
 
-DB_PATH = os.path.join(os.path.dirname(__file__), "company_database.sqlite")
-MOCK_JS_PATH = os.path.join(os.path.dirname(__file__), "..", "frontend", "mockData.js")
+DB_PATH = os.path.abspath(os.path.join(os.path.dirname(__file__), "company_database.sqlite"))
 
-def get_db_connection():
+def get_db_connection() -> sqlite3.Connection:
+    """Provides a fresh SQLite connection with row access by column name."""
     conn = sqlite3.connect(DB_PATH)
     conn.row_factory = sqlite3.Row
     return conn
 
-def sync_sqlite_to_mockdata():
+def init_db():
+    """Ensures database tables and audit log tables exist."""
     conn = get_db_connection()
     try:
         c = conn.cursor()
-        
-        tables = ["employees", "expenses", "tasks", "leaves", "documents", "emails", "benefits"]
-        db_dict = {}
-        
-        for table in tables:
-            try:
-                c.execute(f"SELECT * FROM {table}")
-                rows = c.fetchall()
-                db_dict[table] = [dict(row) for row in rows]
-            except:
-                db_dict[table] = []
+        c.execute("""CREATE TABLE IF NOT EXISTS audit_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            table_name TEXT,
+            record_id TEXT,
+            action TEXT,
+            details TEXT,
+            timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+        )""")
+        conn.commit()
     finally:
         conn.close()
-    
-    # Write to mockData.js
-    output = "// Mock Data for WorkHub Simulation Environment\n\nconst mockData = " + json.dumps(db_dict, indent=4) + ";\n"
-    with open(MOCK_JS_PATH, "w", encoding="utf-8") as f:
-        f.write(output)
 
-def _read_mock_db():
+def get_recent_audit_logs(limit: int = 20) -> List[Dict[str, Any]]:
+    """Fetches recent audit log activities directly from SQLite."""
     conn = get_db_connection()
-    c = conn.cursor()
-    
-    tables = ["employees", "expenses", "tasks", "leaves", "documents", "emails", "benefits"]
-    db_dict = {}
-    
-    for table in tables:
-        try:
-            c.execute(f"SELECT * FROM {table}")
-            rows = c.fetchall()
-            db_dict[table] = [dict(row) for row in rows]
-        except:
-            db_dict[table] = []
-            
-    conn.close()
-    return db_dict
+    try:
+        c = conn.cursor()
+        c.execute("SELECT * FROM audit_logs ORDER BY id DESC LIMIT ?", (limit,))
+        rows = c.fetchall()
+        return [dict(row) for row in rows]
+    except Exception:
+        return []
+    finally:
+        conn.close()
 
-def _write_mock_db(db):
-    conn = get_db_connection()
-    c = conn.cursor()
-    
-    tables = ["employees", "expenses", "tasks", "leaves", "documents", "emails", "benefits"]
-    for table in tables:
-        # Clear existing
-        try:
-            c.execute(f"DELETE FROM {table}")
-        except:
-            pass
-            
-        records = db.get(table, [])
-        for record in records:
-            keys = list(record.keys())
-            values = [record[k] for k in keys]
-            placeholders = ",".join(["?"] * len(keys))
-            columns = ",".join(keys)
-            
-            try:
-                c.execute(f"INSERT INTO {table} ({columns}) VALUES ({placeholders})", values)
-            except sqlite3.Error as e:
-                # If there's an error (like a new key not in schema), we can skip or alter
-                print(f"Error inserting into {table}: {e}")
-                
-    conn.commit()
-    conn.close()
-    
-    sync_sqlite_to_mockdata()
 

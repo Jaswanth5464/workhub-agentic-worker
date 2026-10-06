@@ -175,12 +175,6 @@ class BaseRepository:
             record_id = data.get('id', c.lastrowid)
             self._audit(conn, "CREATE", str(record_id), data)
             conn.commit()
-            
-            from workhub_project.database.db_utils import sync_sqlite_to_mockdata
-            try:
-                sync_sqlite_to_mockdata()
-            except Exception:
-                pass
         finally:
             conn.close()
             
@@ -201,12 +195,6 @@ class BaseRepository:
             c.execute(f"UPDATE {self.table_name} SET {set_clause} WHERE id = ?", values + [record_id])
             self._audit(conn, "UPDATE", record_id, data)
             conn.commit()
-            
-            from workhub_project.database.db_utils import sync_sqlite_to_mockdata
-            try:
-                sync_sqlite_to_mockdata()
-            except Exception:
-                pass
         finally:
             conn.close()
             
@@ -221,12 +209,6 @@ class BaseRepository:
             if rows_deleted > 0:
                 self._audit(conn, "DELETE", record_id, {})
             conn.commit()
-            
-            from workhub_project.database.db_utils import sync_sqlite_to_mockdata
-            try:
-                sync_sqlite_to_mockdata()
-            except Exception:
-                pass
         finally:
             conn.close()
             
