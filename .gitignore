@@ -57,3 +57,6 @@ frontend-ai/node_modules/
 frontend/node_modules/
 dist/
 .angular/
+
+# Local batch startup scripts
+*.bat
