@@ -16,7 +16,25 @@
 
 ---
 
-## 📑 Interactive Table of Contents
+## 📑 Index & Assignment Evaluation Criteria Map
+
+To help evaluators quickly verify every dimension required by the **CentrAlign AI Problem Statement**, this index maps each evaluation pillar directly to its implementation, architecture diagrams, benchmark tests, and verified evidence:
+
+| CentrAlign AI Evaluation Dimension | Core Architecture & Solution Components | Quick Link |
+|:---|:---|:---:|
+| 🌟 **Executive Overview & Scope** | • Executive Summary & Enterprise Problem Context<br/>• Visual Platform Tour (11 Console & WorkHub Screenshots) | [Jump ➔](#-executive-summary) |
+| 🧠 **1. Autonomy & Reasoning** | • Evaluator Q&A: Autonomy (Q1)<br/>• Dynamic Subgoal Decomposition Engine (`G1`, `G2`...)<br/>• 4-Facet ReAct Execution Cycle (`DECIDE ➔ GUARD ➔ ACT ➔ VERIFY`) | [Jump ➔](#q1-autonomy--how-does-the-agent-figure-out-what-to-do-next-without-being-told-every-step) |
+| ⚡ **2. Real Execution (Browser & DB)** | • Evaluator Q&A: Real Execution vs. Mocking (Q2)<br/>• Playwright Web Browser Automation Engine (10 primitives)<br/>• SQLite ACID Transactions, Sequential Auto-ID & Audit Logging | [Jump ➔](#q2-execution--does-the-agent-actually-do-real-work-or-just-explain-what-to-do) |
+| 🛡️ **3. Reliability & Error Recovery** | • Evaluator Q&A: Reliability & Loops (Q3)<br/>• 3-Layer Resilience Shield & Loop-Breaker Recovery<br/>• 4-Tier Multi-Provider LLM Fallback (Groq ➔ Gemini ➔ NVIDIA ➔ Ollama) | [Jump ➔](#q3-reliability--error-recovery--how-does-it-handle-failures-loops-and-rate-limits) |
+| 🔍 **4. Deterministic Verification** | • Evaluator Q&A: Verification Proof (Q4)<br/>• Targeted Verification Queries & Live DOM Hashes<br/>• Evaluator Verification Evidence Drawer & Audit Checklist | [Jump ➔](#q4-verification--how-does-the-agent-prove-that-the-task-was-actually-completed) |
+| 👤 **5. Human-In-The-Loop (HITL)** | • Evaluator Q&A: Human Authorization (Q5)<br/>• Security Guard & Strict `mode=ro` Read-Only Enforcement<br/>• Non-Blocking Realtime SSE Confirmation Cards | [Jump ➔](#q5-human-in-the-loop--when-does-the-agent-ask-for-approval-vs-proceeding-alone) |
+| 🌐 **6. Generalization & Architecture** | • Evaluator Q&A: Domain-Agnostic Extensibility (Q6)<br/>• Complete Dual-Mode System Architecture Flowchart<br/>• WorkHub 7-Domain Enterprise Simulation Environment | [Jump ➔](#q6-generalization--how-easily-can-this-system-handle-new-unseen-tasks) |
+| 🚀 **7. Setup, Benchmarks & Testing** | • Quick Start & One-Click Windows Launcher (`Run_Project.bat`)<br/>• 10 Copy-Paste Ready Benchmark Tasks (Browser + Direct DB)<br/>• 181/181 Verified Unit & Scenario Test Matrix (100% Pass Rate) | [Jump ➔](#-quick-start--one-click-run) |
+| 📋 **8. Submission Deliverables** | • Assumptions Made While Building Solution<br/>• Demo Walkthrough & 3-Step Live Reproduction Guide<br/>• Known Limitations & Evolution to Production (Q7)<br/>• CentrAlign AI Submission Checklist Compliance Matrix | [Jump ➔](#-assumptions-made-while-building-the-solution) |
+
+---
+
+### 📖 Complete Chapter Table of Contents
 
 1. [🌟 Executive Summary](#-executive-summary)
 2. [📸 Visual Platform Tour & Live Execution Screenshots](#-visual-platform-tour--live-execution-screenshots)
