@@ -1,0 +1,9 @@
+[
+    { "type": "state", "state": "UNDERSTANDING", "seq": 1 },
+    { "type": "thought", "content": "I need to look up Jane's leave request", "seq": 2 },
+    { "type": "action", "action": "sql_query", "args": {"query": "SELECT * FROM leaves WHERE employee_id=12"}, "seq": 3 },
+    { "type": "state", "state": "EXECUTING", "seq": 4 },
+    { "type": "observation", "content": "row 1: Jane Smith, Oct 15-20, pending", "seq": 5 },
+    { "type": "state", "state": "WAITING_APPROVAL", "seq": 6 },
+    { "type": "approval_required", "data": {"resource": "leave", "id": "LV-202"}, "seq": 7 }
+]

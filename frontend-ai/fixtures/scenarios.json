@@ -1,0 +1,16 @@
+[
+    {
+        "id": "scenario-1",
+        "title": "Salary Increase",
+        "category": "Write",
+        "prompt": "Raise the salary of all Engineering employees by 10%.",
+        "expected": "Update employees table where department is Engineering, setting salary = salary * 1.10."
+    },
+    {
+        "id": "scenario-2",
+        "title": "Pending Leaves",
+        "category": "Read",
+        "prompt": "List all pending leave requests.",
+        "expected": "Return a list of leaves with status = 'pending'. No writes allowed."
+    }
+]

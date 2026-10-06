@@ -1,0 +1,10 @@
+domain: "hr"
+agent:
+  max_steps: 40
+  default_budget: 10.0
+safety:
+  allow_unsafe_writes: false
+  require_approval_for_writes: true
+  allowed_domains:
+    - hr
+    - internal

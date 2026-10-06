@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WorkHub - Employee Operations Management</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="logo-container">
+                <i class="fa-solid fa-layer-group logo-icon"></i>
+                <h2>WorkHub<span>HR</span></h2>
+            </div>
+            
+            <nav class="nav-menu">
+                <div class="nav-section">MAIN</div>
+                <a href="#" class="nav-item active" data-view="dashboard">
+                    <i class="fa-solid fa-chart-pie"></i> Dashboard
+                </a>
+                <a href="#" class="nav-item" data-view="employees">
+                    <i class="fa-solid fa-users"></i> Directory
+                </a>
+                
+                <div class="nav-section">OPERATIONS</div>
+                <a href="#" class="nav-item" data-view="expenses">
+                    <i class="fa-solid fa-file-invoice-dollar"></i> Expenses <span class="badge warning">3</span>
+                </a>
+                <a href="#" class="nav-item" data-view="leaves">
+                    <i class="fa-solid fa-calendar-check"></i> Leave Requests
+                </a>
+                <a href="#" class="nav-item" data-view="benefits">
+                    <i class="fa-solid fa-heart-pulse"></i> Benefits
+                </a>
+                
+                <div class="nav-section">WORKSPACE</div>
+                <a href="#" class="nav-item" data-view="tasks">
+                    <i class="fa-solid fa-list-check"></i> Tasks <span class="badge danger">1</span>
+                </a>
+                <a href="#" class="nav-item" data-view="emails">
+                    <i class="fa-solid fa-envelope"></i> Inbox <span class="badge primary">5</span>
+                </a>
+                <a href="#" class="nav-item" data-view="documents">
+                    <i class="fa-solid fa-folder-open"></i> Documents
+                </a>
+            </nav>
+            
+            <div class="user-profile">
+                <img src="https://ui-avatars.com/api/?name=Admin+User&background=2563eb&color=fff" alt="Admin" class="avatar">
+                <div class="user-info">
+                    <strong>Admin User</strong>
+                    <span>HR Manager</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <header class="topbar">
+                <div class="topbar-actions">
+                    <button class="icon-btn"><i class="fa-regular fa-bell"></i></button>
+                    <button class="btn-primary" id="ai-help-btn"><i class="fa-solid fa-robot"></i> Ask AI Worker</button>
+                </div>
+            </header>
+
+            <div id="view-container" class="view-container">
+                <!-- Dynamic Content Loads Here -->
+            </div>
+        </main>
+    </div>
+
+    <!-- Approval Modal (For Agent Interaction) -->
+    <div id="approval-modal" class="modal-overlay hidden">
+        <div class="modal">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-shield-halved text-warning"></i> Action Requires Approval</h3>
+                <button class="close-modal"><i class="fa-solid fa-times"></i></button>
+            </div>
+            <div class="modal-body" id="approval-content">
+                <!-- Dynamic Approval Content -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="btn-reject">Reject</button>
+                <button class="btn-primary" id="btn-approve">Approve</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- AI Agent Modal -->
+    <div id="ai-modal" class="modal-overlay hidden">
+        <div class="modal" style="max-width: 600px;">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-robot"></i> AI Task Worker</h3>
+                <button class="close-modal" id="close-ai-modal"><i class="fa-solid fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div id="ai-chat-history" style="height: 300px; overflow-y: auto; background: #f9fafb; padding: 1rem; border-radius: 0.5rem; margin-bottom: 1rem; border: 1px solid #e5e7eb; display: flex; flex-direction: column; gap: 0.5rem;">
+                    <div style="padding: 0.5rem; background: #e0f2fe; border-radius: 0.5rem; align-self: flex-start; max-width: 80%;">Hello! I am your AI Task Worker. What can I do for you today?</div>
+                </div>
+                <div style="display: flex; gap: 0.5rem;">
+                    <input type="text" id="ai-task-input" class="form-control" placeholder="e.g. Give all employees a 5% raise" style="flex: 1;" />
+                    <button class="btn-primary" id="btn-submit-task">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
