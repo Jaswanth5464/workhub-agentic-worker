@@ -8,7 +8,7 @@ from ai_worker_project.agent.llm import generate_response, extract_json, prune_h
 from ai_worker_project.tools import ToolRegistry
 from ai_worker_project.tools.base import RiskLevel
 from ai_worker_project.tools.memory import get_all_memories
-from backend.agent.state import StateMachine, AgentState
+from ai_worker_project.agent.state import StateMachine, AgentState
 import sys
 import os
 sys.path.append(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
