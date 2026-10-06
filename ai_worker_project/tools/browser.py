@@ -815,57 +815,77 @@ class BrowserTool(Tool):
                     await self._show_visual_indicator(page, el, action_type="select", label_text=f"{target} → '{value}'")
 
                     val_str = str(value).strip()
-                    selected = False
+                    selected_val = None
 
-                    # Strategy 1: Direct value match
-                    try:
-                        await el.select_option(val_str, timeout=1200)
-                        selected = True
-                    except Exception:
-                        pass
+                    # Comprehensive multi-strategy JS option resolver
+                    options_resolver_js = """
+                    ([selectEl, searchVal]) => {
+                        if (!selectEl || selectEl.tagName !== 'SELECT') return { success: false, error: 'Target is not a select element', options: [] };
+                        const lower = String(searchVal).toLowerCase().trim();
+                        const opts = Array.from(selectEl.options).map(o => ({
+                            value: o.value,
+                            text: (o.text || '').trim(),
+                            label: (o.label || '').trim()
+                        }));
 
-                    # Strategy 2: Direct label match
-                    if not selected:
-                        try:
-                            await el.select_option(label=val_str, timeout=1200)
-                            selected = True
-                        except Exception:
-                            pass
+                        // Strategy 1: Exact value or text match (case-insensitive)
+                        let matched = opts.find(o => o.value.toLowerCase() === lower || o.text.toLowerCase() === lower || o.label.toLowerCase() === lower);
 
-                    # Strategy 3: Case-insensitive / partial match among <option> tags
-                    if not selected:
-                        try:
-                            options_js = """
-                            ([selectEl, searchVal]) => {
-                                if (!selectEl || selectEl.tagName !== 'SELECT') return null;
-                                const lower = searchVal.toLowerCase();
-                                const opts = Array.from(selectEl.options);
-                                // Exact case-insensitive value or text
-                                let found = opts.find(o => o.value.toLowerCase() === lower || o.text.toLowerCase() === lower);
-                                if (!found) {
-                                    // Prefix or partial match
-                                    found = opts.find(o => o.value.toLowerCase().includes(lower) || o.text.toLowerCase().includes(lower) || lower.includes(o.value.toLowerCase()));
-                                }
-                                if (found) {
-                                    selectEl.value = found.value;
-                                    selectEl.dispatchEvent(new Event('change', { bubbles: true }));
-                                    selectEl.dispatchEvent(new Event('input', { bubbles: true }));
-                                    return found.value;
-                                }
-                                return null;
+                        // Strategy 2: Contains substring match
+                        if (!matched) {
+                            matched = opts.find(o => o.text.toLowerCase().includes(lower) || o.value.toLowerCase().includes(lower) || o.label.toLowerCase().includes(lower));
+                        }
+
+                        // Strategy 3: Token-based match (e.g. "Engineering" matches "John Doe (EMP-001 - Engineering)")
+                        if (!matched) {
+                            const tokens = lower.split(/\\s+/).filter(t => t.length > 2);
+                            if (tokens.length > 0) {
+                                matched = opts.find(o => {
+                                    const fullStr = (o.text + " " + o.value + " " + o.label).toLowerCase();
+                                    return tokens.some(tok => fullStr.includes(tok));
+                                });
                             }
-                            """
-                            matched_val = await el.evaluate(options_js, val_str)
-                            if matched_val is not None:
-                                selected = True
-                        except Exception:
-                            pass
+                        }
+
+                        if (matched) {
+                            selectEl.value = matched.value;
+                            selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+                            selectEl.dispatchEvent(new Event('input', { bubbles: true }));
+                            return { success: true, matched_value: matched.value, matched_text: matched.text, options: opts.map(o => o.text || o.value) };
+                        }
+
+                        return {
+                            success: false,
+                            error: 'Option not found',
+                            options: opts.map(o => o.text || o.value).filter(Boolean)
+                        };
+                    }
+                    """
+
+                    try:
+                        res = await el.evaluate(options_resolver_js, val_str)
+                    except Exception as e:
+                        res = {"success": False, "error": str(e), "options": []}
 
                     await self._hide_visual_indicator(page)
-                    if not selected:
-                        return ToolResult(success=False, error=f"Could not select option '{value}' in target '{target}'")
 
-                    return ToolResult(success=True, data={"success": True, "action": "select", "target": target, "value": value})
+                    if res.get("success"):
+                        return ToolResult(success=True, data={
+                            "success": True,
+                            "action": "select",
+                            "target": target,
+                            "value": res.get("matched_value"),
+                            "matched_label": res.get("matched_text")
+                        })
+                    else:
+                        avail = res.get("options", [])
+                        avail_preview = ", ".join([f"'{opt}'" for opt in avail[:8]])
+                        if len(avail) > 8:
+                            avail_preview += f" ... (+{len(avail)-8} more)"
+                        return ToolResult(
+                            success=False,
+                            error=f"Option '{value}' is not a valid choice for dropdown '{target}'. Available choices are: [{avail_preview}]. Please select one of these valid options."
+                        )
 
                 elif action == "extract_text":
                     if not target: return ToolResult(success=False, error="Target required for extract_text")

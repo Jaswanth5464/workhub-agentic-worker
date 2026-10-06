@@ -76,23 +76,71 @@ class InteractionTools:
         return {"success": True, "action": "clear_input", "target": target}
 
     async def select_option(self, target: str, value: str, page: Page, session_id: str = "default") -> Dict[str, Any]:
-        """Selects an option from a dropdown / select element."""
+        """Selects an option from a dropdown / select element with resilient partial matching."""
         loc, res_info = await ElementResolver.resolve(target, page)
         if not loc:
             return {"success": False, "error": f"Dropdown '{target}' not found."}
 
-        try:
-            await loc.select_option(label=str(value), timeout=8000)
-        except Exception:
-            await loc.select_option(value=str(value), timeout=4000)
+        options_resolver_js = """
+        ([selectEl, searchVal]) => {
+            if (!selectEl || selectEl.tagName !== 'SELECT') return { success: false, error: 'Target is not a select element', options: [] };
+            const lower = String(searchVal).toLowerCase().trim();
+            const opts = Array.from(selectEl.options).map(o => ({
+                value: o.value,
+                text: (o.text || '').trim(),
+                label: (o.label || '').trim()
+            }));
 
-        return {
-            "success": True,
-            "action": "select_option",
-            "target": target,
-            "selected_value": value,
-            "resolved_by": res_info.get("resolved_by")
+            // Exact match
+            let matched = opts.find(o => o.value.toLowerCase() === lower || o.text.toLowerCase() === lower || o.label.toLowerCase() === lower);
+            // Partial match
+            if (!matched) {
+                matched = opts.find(o => o.text.toLowerCase().includes(lower) || o.value.toLowerCase().includes(lower) || o.label.toLowerCase().includes(lower));
+            }
+            // Token match
+            if (!matched) {
+                const tokens = lower.split(/\\s+/).filter(t => t.length > 2);
+                if (tokens.length > 0) {
+                    matched = opts.find(o => {
+                        const fullStr = (o.text + " " + o.value + " " + o.label).toLowerCase();
+                        return tokens.some(tok => fullStr.includes(tok));
+                    });
+                }
+            }
+
+            if (matched) {
+                selectEl.value = matched.value;
+                selectEl.dispatchEvent(new Event('change', { bubbles: true }));
+                selectEl.dispatchEvent(new Event('input', { bubbles: true }));
+                return { success: true, matched_value: matched.value, matched_text: matched.text };
+            }
+
+            return { success: false, options: opts.map(o => o.text || o.value).filter(Boolean) };
         }
+        """
+
+        try:
+            res = await loc.evaluate(options_resolver_js, str(value).strip())
+        except Exception as e:
+            res = {"success": False, "error": str(e), "options": []}
+
+        if res.get("success"):
+            return {
+                "success": True,
+                "action": "select_option",
+                "target": target,
+                "selected_value": res.get("matched_value"),
+                "matched_label": res.get("matched_text"),
+                "resolved_by": res_info.get("resolved_by")
+            }
+        else:
+            avail = res.get("options", [])
+            avail_preview = ", ".join([f"'{opt}'" for opt in avail[:8]])
+            return {
+                "success": False,
+                "error": f"Option '{value}' not found in dropdown '{target}'. Available choices: [{avail_preview}]",
+                "resolved_by": res_info.get("resolved_by")
+            }
 
     async def check_checkbox(self, target: str, page: Page, session_id: str = "default") -> Dict[str, Any]:
         """Checks a checkbox or toggle."""
