@@ -270,7 +270,7 @@ class InteractionTools:
         await self._show_visual_indicator(page, loc, action_type="select", label_text=f"{target} → '{value}'")
 
         options_resolver_js = """
-        ([selectEl, searchVal]) => {
+        (selectEl, searchVal) => {
             if (!selectEl || selectEl.tagName !== 'SELECT') return { success: false, error: 'Target is not a select element', options: [] };
             const lower = String(searchVal).toLowerCase().trim();
             const opts = Array.from(selectEl.options).map(o => ({

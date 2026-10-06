@@ -814,10 +814,10 @@ class BrowserTool(Tool):
                     })
 
                 elif action == "click":
-                    if not target: return ToolResult(success=False, error="Target or selector required for click")
-                    el = await self._resolve_semantic_target(target, page, target_id=target_id, tag_hint="button")
+                    if not target and not target_id: return ToolResult(success=False, error="Target or selector required for click")
+                    el = await self._resolve_semantic_target(target or target_id, page, target_id=target_id, tag_hint="button")
                     if not el:
-                        raise PlaywrightTimeoutError(f"Could not locate clickable target: '{target}' (ID: {target_id})")
+                        raise PlaywrightTimeoutError(f"Could not locate clickable target: '{target or target_id}' (ID: {target_id})")
 
                     # Highlight element with animated AI badge before interaction
                     await self._show_visual_indicator(page, el, action_type="click", label_text=target)
@@ -892,7 +892,7 @@ class BrowserTool(Tool):
 
                     # Comprehensive multi-strategy JS option resolver
                     options_resolver_js = """
-                    ([selectEl, searchVal]) => {
+                    (selectEl, searchVal) => {
                         if (!selectEl || selectEl.tagName !== 'SELECT') return { success: false, error: 'Target is not a select element', options: [] };
                         const lower = String(searchVal).toLowerCase().trim();
                         const opts = Array.from(selectEl.options).map(o => ({
