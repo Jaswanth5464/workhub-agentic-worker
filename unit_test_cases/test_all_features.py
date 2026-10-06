@@ -14,6 +14,10 @@ Validates:
 - UI Badges & Real-time Polling Synchronization Accuracy
 - AI Worker Tool Integration with Strict Guardrails
 """
+import os
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
 import sys
 import os
@@ -24,7 +28,6 @@ from datetime import datetime
 from fastapi.testclient import TestClient
 
 # Add project root to sys.path
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
 from backend_hr import app
 from workhub_project.database.db_utils import get_db_connection, init_db, get_recent_audit_logs
@@ -1895,5 +1898,4 @@ if __name__ == "__main__":
     print("\n" + "=" * 70)
     print(f" >>> ALL {result.testsRun} TESTS PASSED SUCCESSFULLY! DIRECT SQLITE & UI SYNC VERIFIED! <<<")
     print("=" * 70 + "\n")
-
 

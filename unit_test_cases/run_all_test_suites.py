@@ -17,6 +17,10 @@ Usage:
   python run_all_test_suites.py all         # Run All Suites End-to-End
 ========================================================================================
 """
+import os
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
 import os
 import sys
@@ -58,7 +62,7 @@ SUITES = {
 def run_test_file(filename: str, task_arg: str = "all"):
     filepath = filename
     if not os.path.exists(filepath):
-        candidate = os.path.join("unit_test_cases", filename)
+        candidate = os.path.join(os.path.dirname(__file__), filename)
         if os.path.exists(candidate):
             filepath = candidate
     

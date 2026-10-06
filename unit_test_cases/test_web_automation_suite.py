@@ -15,6 +15,10 @@ Comprehensive test suite verifying the 7 Web Automation Recovery Layers against 
   [8] Multi-Tab Session & Full-Page Screenshot Storage (new_tab, screenshot)
 ========================================================================================
 """
+import os
+import sys
+sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
 import os
 import sys
@@ -31,7 +35,6 @@ from pathlib import Path
 if sys.platform == "win32":
     sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
-sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
 from dotenv import load_dotenv
 load_dotenv()
