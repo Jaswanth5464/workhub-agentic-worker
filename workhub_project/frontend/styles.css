@@ -584,4 +584,66 @@ select.form-control option {
     font-family: monospace;
 }
 
+/* ==========================================================================
+   AI LIVE PHYSICAL INTERACTION & SPOTLIGHT VISUALS
+   ========================================================================== */
+@keyframes aiPulseGlow {
+    0% { transform: scale(1); box-shadow: 0 0 15px currentColor; }
+    50% { transform: scale(1.02); box-shadow: 0 0 35px currentColor; }
+    100% { transform: scale(1); box-shadow: 0 0 15px currentColor; }
+}
+
+@keyframes aiLaserScan {
+    0% { background-position: 0% 50%; }
+    100% { background-position: 100% 50%; }
+}
+
+.ai-highlight-click {
+    outline: 4px solid #00F0FF !important;
+    outline-offset: 3px !important;
+    box-shadow: 0 0 30px rgba(0, 240, 255, 0.9) !important;
+    transition: all 0.2s ease-in-out !important;
+    animation: aiPulseGlow 0.4s infinite !important;
+    color: #00F0FF;
+}
+
+.ai-highlight-type {
+    outline: 4px solid #FFE500 !important;
+    outline-offset: 3px !important;
+    box-shadow: 0 0 30px rgba(255, 229, 0, 0.95) !important;
+    background-color: rgba(255, 229, 0, 0.12) !important;
+    transition: all 0.2s ease-in-out !important;
+    animation: aiPulseGlow 0.4s infinite !important;
+    color: #FFE500;
+}
+
+.ai-highlight-select {
+    outline: 4px solid #00FF88 !important;
+    outline-offset: 3px !important;
+    box-shadow: 0 0 30px rgba(0, 255, 136, 0.9) !important;
+    background-color: rgba(0, 255, 136, 0.12) !important;
+    transition: all 0.2s ease-in-out !important;
+    animation: aiPulseGlow 0.4s infinite !important;
+    color: #00FF88;
+}
+
+.ai-highlight-toggle {
+    outline: 4px solid #BD00FF !important;
+    outline-offset: 3px !important;
+    box-shadow: 0 0 30px rgba(189, 0, 255, 0.9) !important;
+    transition: all 0.2s ease-in-out !important;
+    animation: aiPulseGlow 0.4s infinite !important;
+    color: #BD00FF;
+}
+
+.ai-highlight-clear {
+    outline: 4px solid #FF3366 !important;
+    outline-offset: 3px !important;
+    box-shadow: 0 0 30px rgba(255, 51, 102, 0.9) !important;
+    transition: all 0.2s ease-in-out !important;
+    animation: aiPulseGlow 0.4s infinite !important;
+    color: #FF3366;
+}
+
+
 

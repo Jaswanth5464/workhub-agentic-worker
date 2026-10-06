@@ -399,7 +399,7 @@ class TestWorkHubHRCleanArchitectureComprehensive(unittest.TestCase):
         expenses = self.exp_service.get_all(filters={"status": "approved"})
         total = 0
         for e in expenses:
-            num = int(str(e["amount"]).replace("₹", "").replace("$", "").replace(",", "").strip())
+            num = int(float(str(e["amount"]).replace("₹", "").replace("$", "").replace(",", "").strip() or 0))
             total += num
         self.assertGreaterEqual(total, 0)
 
@@ -1129,7 +1129,7 @@ class TestWorkHubHRCleanArchitectureComprehensive(unittest.TestCase):
         total_exp_amount = 0
         for e in ui_store['expenses']:
             if e.get('status') == 'approved':
-                amt = int(str(e.get('amount', 0)).replace('₹', '').replace('$', '').replace(',', '').strip() or 0)
+                amt = int(float(str(e.get('amount', 0)).replace('₹', '').replace('$', '').replace(',', '').strip() or 0))
                 total_exp_amount += amt
 
         return {

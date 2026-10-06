@@ -444,6 +444,7 @@ class BrowserTool(Tool):
                         document.head.appendChild(style);
                     }
 
+                    element.classList.add('ai-highlight-' + actionType);
                     document.body.appendChild(ring);
                     document.body.appendChild(badge);
                 }
@@ -453,7 +454,7 @@ class BrowserTool(Tool):
                 except Exception:
                     pass
 
-            await asyncio.sleep(0.4)
+            await asyncio.sleep(0.45)
         except Exception:
             pass
 
@@ -462,13 +463,15 @@ class BrowserTool(Tool):
         try:
             await page.evaluate("""
                 () => {
+                    document.querySelectorAll('.ai-highlight-click, .ai-highlight-type, .ai-highlight-select, .ai-highlight-toggle, .ai-highlight-clear')
+                        .forEach(e => e.classList.remove('ai-highlight-click', 'ai-highlight-type', 'ai-highlight-select', 'ai-highlight-toggle', 'ai-highlight-clear'));
                     document.querySelectorAll('.ai-visual-indicator-badge, .ai-visual-indicator-ring').forEach(e => {
                         e.style.opacity = '0';
                         setTimeout(() => e.remove(), 250);
                     });
                 }
             """)
-            await asyncio.sleep(0.2)
+            await asyncio.sleep(0.25)
         except Exception:
             pass
 
