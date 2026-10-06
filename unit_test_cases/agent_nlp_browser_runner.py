@@ -46,7 +46,7 @@ from ai_worker_project.tools import get_default_registry
 from ai_worker_project.agent.loop import Agent
 from ai_worker_project.tools.browser import close_browser_session
 
-FRONTEND_DIR = Path(__file__).parent / "workhub_project" / "frontend"
+FRONTEND_DIR = Path(__file__).resolve().parent.parent / "workhub_project" / "frontend"
 PORT = 3000
 _server_thread = None
 
