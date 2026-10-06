@@ -89,6 +89,8 @@ This project delivers a **fully autonomous AI Task Worker** powered by **Advance
 
 <div align="center">
 
+### Part A: 🤖 Autonomous AI Task Worker Console (`http://localhost:3002`)
+
 ### 1. 🖥️ Task Assignment & Interactive Scenario Launchpad
 ![Task Assignment Console](docs/screenshots/01_task_assignment_screen.png)
 *Clean command interface supporting arbitrary natural language prompts and quick scenario templates.*
@@ -128,6 +130,32 @@ This project delivers a **fully autonomous AI Task Worker** powered by **Advance
 ### 7. 📊 Final Verified Execution Report & Compliance Checklist
 ![Final Verified Report](docs/screenshots/05_final_verified_report.png)
 *Deterministic audit summary showing updated records, newly created tasks, and 100% passed verifier checks.*
+
+---
+
+### Part B: 🏢 WorkHub Enterprise Workspace & Simulation Environment (`http://localhost:3000`)
+
+### 8. 📊 Executive Overview Dashboard & Real-Time Metrics
+![WorkHub Overview Dashboard](docs/screenshots/08_workhub_overview_dashboard.png)
+*Live operational metrics showing Total Employees (83), Pending Approvals, Open Tasks, and recent audit activity.*
+
+---
+
+### 9. 👥 Employee Directory & Real-Time Roster Management
+![WorkHub Employee Directory](docs/screenshots/09_workhub_employee_directory.png)
+*Searchable employee database with active/on-leave status badges, roles, and automated onboarding action triggers.*
+
+---
+
+### 10. 💬 Embedded In-App AI Task Worker Assistant
+![WorkHub Embedded AI Worker Modal](docs/screenshots/10_workhub_embedded_ai_worker.png)
+*Interactive chat modal embedded directly inside WorkHub allowing instant task dispatch and background SQLite execution.*
+
+---
+
+### 11. 🏛️ Department Structure & Team Lead Overview
+![WorkHub Department Management](docs/screenshots/11_workhub_departments_management.png)
+*Organizational department view showing active member counts, department leads, and team allocations.*
 
 </div>
 
