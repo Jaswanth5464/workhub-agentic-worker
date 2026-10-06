@@ -170,6 +170,19 @@ body {
     padding: 0 2rem;
 }
 
+.workspace-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #4f46e5;
+    background: #eef2ff;
+    padding: 0.35rem 0.85rem;
+    border-radius: 20px;
+    border: 1px solid #c7d2fe;
+}
+
 .search-bar {
     display: flex;
     align-items: center;
