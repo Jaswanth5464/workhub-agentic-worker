@@ -97,8 +97,9 @@ When finished and verified, use the "finish" tool:
 }
 
 CRITICAL INSTRUCTION - TOOL CALLING, WEB AUTOMATION & SECURITY GUARDS:
-1. STRICT WEB AUTOMATION MODE: When the user prompt requests web automation, mentions a URL (e.g. "open http://...", "navigate to http://..."), or asks to perform actions in the browser, you MUST execute ALL steps PURELY via the `browser` tool. You must NOT fallback to SQL queries unless the browser tool returns a fatal crash.
-2. WORKHUB UI INTERACTION PATTERNS:
+1. WORKHUB HOST & LOCATION: The WorkHub application is hosted locally at `http://localhost:3000/index.html`. When the user asks to "Open WorkHub", "Go to WorkHub", or perform tasks in WorkHub, automatically open `http://localhost:3000/index.html`.
+2. STRICT WEB AUTOMATION MODE: When the user prompt requests web automation, mentions a URL (e.g. "open http://...", "navigate to http://..."), or asks to perform actions in the browser or WorkHub, you MUST execute ALL steps PURELY via the `browser` tool. You must NOT fallback to SQL queries unless the browser tool returns a fatal crash.
+3. WORKHUB UI INTERACTION PATTERNS:
    - Creating a Task via UI:
      1. Click "New Task" button (`#btn-new-task`).
      2. Type title into `#new-tsk-title`.
@@ -112,15 +113,15 @@ CRITICAL INSTRUCTION - TOOL CALLING, WEB AUTOMATION & SECURITY GUARDS:
      5. Repeat for subsequent tasks if multiple tasks need updating.
    - Approvals via UI:
      1. In Approval Center (`dataView="approvals"`), click the green "Approve" button (`.btn-approve-leave-direct` or `.btn-approve-exp-direct`).
-3. Browser tool action format:
-   - Open page: `{"tool": "browser", "args": {"action": "open_page", "url": "http://..."}}`
+4. Browser tool action format:
+   - Open page: `{"tool": "browser", "args": {"action": "open_page", "url": "http://localhost:3000/index.html"}}`
    - Observe DOM: `{"tool": "browser", "args": {"action": "observe", "selector": "body"}}`
    - Click: `{"tool": "browser", "args": {"action": "click", "selector": "[data-agent-id='...']" or "#id"}}`
    - Type: `{"tool": "browser", "args": {"action": "type", "selector": "#id", "value": "..."}}`
    - Select Dropdown: `{"tool": "browser", "args": {"action": "select", "selector": "#id", "value": "..."}}`
-4. NEVER invent or call fake tools. Our automated security guard automatically intercepts write operations and prompts the human operator for authorization when needed.
-5. If you need to ask the human operator a clarifying question or request specific user input, use the 'ask_user' tool with {"question": "..."}.
-6. COMPANY MEMORY: If you ask the human a question and they provide an answer or a rule, use the 'memorize_fact' tool to save that rule for future runs!
+5. NEVER invent or call fake tools. Our automated security guard automatically intercepts write operations and prompts the human operator for authorization when needed.
+6. If you need to ask the human operator a clarifying question or request specific user input, use the 'ask_user' tool with {"question": "..."}.
+7. COMPANY MEMORY: If you ask the human a question and they provide an answer or a rule, use the 'memorize_fact' tool to save that rule for future runs!
 
 Available Tools:
 {tool_descriptions}
@@ -534,6 +535,7 @@ class Agent:
 Your goal is to complete the given task on-screen using ONLY the browser tool.
 
 CRITICAL ARCHITECTURAL PRINCIPLES:
+0. WORKHUB HOST: The WorkHub application is hosted locally at `http://localhost:3000/index.html`. When the user asks to "Open WorkHub", "Go to WorkHub", or perform tasks in WorkHub, immediately start with `{"tool": "browser", "args": {"action": "open_page", "url": "http://localhost:3000/index.html"}}`.
 1. PURE BROWSER EXECUTION: You interact ONLY through visible on-screen browser actions (`open_page`, `observe`, `click`, `type`, `select`, `extract_text`, `wait_for_condition`).
 2. NO CSS/XPATH GUESSING: Specify clean semantic targets (e.g. `target: "Open Task"`, `target_id: "TSK-001"`, `target: "Update Task Status in SQLite"`, `target: "Save Status"`, `target: "New Task"`, `target: "Approve"`).
 3. MODAL INTERACTION FLOW:
@@ -616,7 +618,11 @@ Available Tools:
                 self.history.append({"role": "assistant", "content": json.dumps(parsed)})
                 self.history.append({"role": "user", "content": step.observation})
 
-        is_web_mode = any(k in task.lower() for k in ["http://", "https://", "localhost:", "browser", "web automation", "on-screen", "open page", "navigate to", "click", "ui"])
+        is_web_mode = any(k in task.lower() for k in [
+            "http://", "https://", "localhost:", "browser", "web automation", 
+            "on-screen", "open page", "navigate to", "click", "ui", 
+            "workhub", "open workhub", "tasks", "filter by", "mark all"
+        ])
         system_prompt = self._build_system_prompt(is_web_mode=is_web_mode)
         state = RunState(goal=task)
         final_answer = None
