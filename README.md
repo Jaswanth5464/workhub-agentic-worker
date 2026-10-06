@@ -190,19 +190,19 @@ Here are clear, simple-English answers addressing every evaluation dimension and
 * **Answer:** When a user enters a goal, our **Dynamic LLM Planning Engine** analyzes the database schema and breaks the goal down into minimal sequential subgoals (e.g., `G1: Find active employees`, `G2: Identify travel claims < ₹5,000`, `G3: Approve claims`, `G4: Verify updates`). At each step of the loop, the agent inspects the previous tool's output observation, updates its internal reasoning, and decides the next action dynamically.
 
 ### Q2: Execution — Does the agent actually do real work, or just explain what to do?
-* **Answer:** It performs **100% real execution**. When it approves an expense claim or creates an employee, it executes real SQL `UPDATE`/`INSERT` commands or invokes real service methods against `company_database.sqlite`. It writes actual rows to disk, triggers database commits, logs the action into `audit_logs`, and synchronizes `mockData.js`.
+* **Answer:** It performs **100% real execution**. When it approves an expense claim or creates an employee, it executes real SQL `UPDATE`/`INSERT` commands or invokes real service methods against `company_database.sqlite`. It writes actual rows to disk, triggers database commits, logs the action into `audit_logs`, and synchronizes all views directly via Clean Architecture REST APIs (`/api/hr/*`).
 
 ### Q3: Reliability & Error Recovery — How does it handle failures, loops, and rate limits?
 * **Answer:** We implemented a 3-layer resilience shield:
-  1. **Loop-Breaker Detection:** If the agent tries the same tool with identical arguments 3 times in a row without progress, the engine automatically breaks the loop and forces the agent to recover with a different strategy.
-  2. **Multi-Provider LLM Fallback:** If Groq hits a 429 rate limit or timeout, the engine automatically falls back to Gemini $\rightarrow$ NVIDIA NIM $\rightarrow$ local Ollama without crashing.
-  3. **DDL Auto-Rejection:** Dangerous queries like `ALTER TABLE` or `DROP TABLE` are auto-rejected with clear error messages, teaching the agent to stick to safe data-level operations.
+  1. **Loop-Breaker Detection & Anti-Thrashing Guard:** If the agent tries the same tool with identical arguments or oscillates actions without progress, the engine automatically breaks the loop and forces the agent to recover with a self-correcting plan refinement heuristic.
+  2. **Multi-Provider LLM Fallback (4-Tier Chain):** If Groq hits a 429 rate limit or timeout, the engine automatically falls back to Gemini ➔ NVIDIA NIM ➔ local Ollama without crashing.
+  3. **DDL Auto-Rejection & Schema Introspection:** Dangerous queries like `ALTER TABLE` or `DROP TABLE` are auto-rejected with clear error messages, and schema inspection prevents hallucinating column names.
 
 ### Q4: Verification — How does the agent prove that the task was actually completed?
-* **Answer:** Before calling `finish`, the agent is instructed to perform a **targeted verification query** (`SELECT ... WHERE id = ...`). It inspects the real database state after mutation to confirm the changes took place. The `VERIFY` drawer in the UI captures and displays these exact database rows as deterministic evaluator evidence.
+* **Answer:** Before calling `finish`, the agent is instructed to perform a **targeted verification query** (`SELECT ... WHERE id = ...`) or capture a live DOM hash evidence state. It inspects the real database state after mutation to confirm the changes took place. The `VERIFY` drawer in the UI captures and displays these exact database rows as deterministic evaluator evidence.
 
 ### Q5: Human-In-The-Loop — When does the agent ask for approval vs. proceeding alone?
-* **Answer:** Read operations (`SELECT`, searching employees, reading documents) execute automatically in read-only mode (`mode=ro`). But any **data mutation** (`UPDATE`, `INSERT`, `DELETE`, status changes) is automatically intercepted by our **Security Guard**. The system pauses, displays an interactive authorization modal in the UI, and only executes the write when the human operator clicks **Approve**.
+* **Answer:** Read operations (`SELECT`, searching employees, reading documents) execute automatically in read-only mode (`mode=ro`). But any **data mutation** (`UPDATE`, `INSERT`, `DELETE`, status changes) is automatically intercepted by our **Security Guard**. The system pauses, performs entity introspection to display a human-readable authorization card with exact business context, and only executes the write when the human operator clicks **Approve**.
 
 ### Q6: Generalization — How easily can this system handle new, unseen tasks?
 * **Answer:** The core ReAct loop, 4-facet guard system, and tool registry are completely **domain-agnostic**. The agent uses 51 modular tools. If you add a new table (e.g. `inventory` or `payroll`) or a new API tool, the agent reads its schema dynamically and can immediately start reasoning and acting on it without any core code changes.
@@ -226,8 +226,11 @@ While most AI agents in the industry are either pure conversational chatbots or 
 | **2** | **🔄 Dual-Mode Omnichannel Execution** | The worker is not limited to one interface. It can operate **under the hood** via high-speed direct SQL and REST API tools (`mode=ro`, CRUD endpoints) OR **visibly in a browser** via Playwright, seamlessly adapting to whatever interface the user requires. |
 | **3** | **🛡️ Deterministic Verification vs. Hallucinated Completion** | Standard LLM agents simply output "I have updated the records" without checking reality. Our system performs **pre- and post-mutation SQLite state snapshots** and DOM checks. If the database row does not exist with the exact requested state, execution is halted with verifiable diagnostics. |
 | **4** | **⚡ Non-Destructive SPA DOM Stabilization** | Standard automation scripts rely on destructive page reloads (`page.reload()`) during errors, which wipe out single-page app (SPA) modal states, form data, and view history. Our engine uses **non-destructive DOM stabilization**, preserving open modals and recovering element focus dynamically. |
-| **5** | **💬 Realtime Non-Blocking HITL Protocol** | Interactive operator clarification and financial authorization dialogs stream live over Server-Sent Events (SSE). Submitting a response immediately resumes the paused agent loop without page freezes, race conditions, or dropped input. |
+| **5** | **💬 Context-Aware Entity & Intent Introspection (Smart HITL Cards)** | Instead of showing raw, confusing SQL or JSON payloads, the security guard pre-fetches entity details (e.g. employee name, expense amount, previous status) so the human operator sees a human-readable confirmation card with full business context. |
 | **6** | **🔁 4-Tier Self-Healing Provider Failover** | Built-in provider fallback: **Groq (Llama 3.3 70B)** ──▶ **Google Gemini 2.5 Flash** ──▶ **NVIDIA NIM** ──▶ **Local Ollama**. If one provider hits a 429 rate limit or timeout, the agent switches mid-task with zero lost progress. |
+| **7** | **🛡️ Anti-Thrashing Loop-Breaker Engine** | Detects oscillating actions or repeated identical tool calls and triggers an autonomous plan refinement heuristic, preventing infinite loops and wasted API tokens. |
+| **8** | **📐 Dynamic Runtime Schema Introspection** | Before generating SQL, the agent dynamically queries `PRAGMA table_info` and SQLite metadata. It never hallucinates non-existent columns (e.g., `employee_salary` vs `salary`). |
+| **9** | **🗄️ 100% Direct Database Clean Architecture** | Completely eliminates static mock JSON buffers in favor of direct SQLite ACID transactions with real-time REST API synchronization across browser and backend. |
 
 ---
 
@@ -408,9 +411,9 @@ flowchart TD
         end
     end
 
-    subgraph State_Sync ["🔄 Bidirectional State Sync"]
-        MockSync["Bidirectional mockData.js Sync"]
-        DB <--> MockSync <--> WorkHubWeb
+    subgraph State_Sync ["🔄 Direct Database Clean Architecture"]
+        REST["Direct Clean Architecture REST API (/api/hr/*)"]
+        DB <--> REST <--> WorkHubWeb
     end
 
     UI -->|POST /api/runs| API
@@ -452,8 +455,8 @@ flowchart TD
    - **Mode A (Browser Automation):** Uses Microsoft Playwright to open web pages, click navigation buttons, fill out modal forms, and observe live web screens using WAI-ARIA semantic targets.
    - **Mode B (Direct Database & API):** Uses 51 specialized tools to run direct SQL queries in read-only mode, mutate records upon authorization, assign sequential primary keys, and record audit trails.
 
-5. **Bidirectional State Synchronization:**
-   - Any change made by the browser worker or the SQL tools is immediately persisted to the active SQLite database and synchronized with the frontend mock dataset, keeping all interfaces consistent.
+5. **Direct Database Clean Architecture Synchronization:**
+   - Any change made by the browser worker, REST API, or SQL tools is immediately persisted to the active SQLite database and live-queried via Clean Architecture REST endpoints, keeping all interfaces 100% in sync without mock state buffers.
 
 ---
 
