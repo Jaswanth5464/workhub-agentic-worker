@@ -616,16 +616,8 @@ class BrowserTool(Tool):
         while retry_count < MAX_ACTION_RETRIES:
             try:
                 if action == "open_page":
-                    url = (kwargs.get("url") or "").strip()
-                    if not url or url.lower() in ["workhub", "workhub web", "work hub", "default", "localhost", "workhub app", "app"]:
-                        url = "http://localhost:3000/index.html"
-                    elif url.startswith("localhost:"):
-                        url = f"http://{url}"
-                    elif not url.startswith("http://") and not url.startswith("https://"):
-                        if "workhub" in url.lower():
-                            url = "http://localhost:3000/index.html"
-                        else:
-                            url = f"http://{url}"
+                    url = kwargs.get("url")
+                    if not url: return ToolResult(success=False, error="URL required")
                     if not self._is_allowed_url(url):
                         return ToolResult(success=False, error=f"Domain {url} not in allowed security list.")
                         
