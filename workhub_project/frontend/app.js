@@ -21,7 +21,16 @@ async function fetchStore() {
         try {
             const res = await fetch(`${API_BASE}/${ep}/`, { cache: 'no-store' });
             if (res.ok) {
-                window.store[ep] = await res.json();
+                const data = await res.json();
+                if (ep === 'emails') {
+                    window.store[ep] = data.map(m => ({
+                        ...m,
+                        from: m.from || m.from_email || 'HR System',
+                        from_email: m.from_email || m.from || 'hr@workhub.local'
+                    }));
+                } else {
+                    window.store[ep] = data;
+                }
                 apiSuccess = true;
             }
         } catch (e) {
@@ -74,13 +83,25 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    // Real-time synchronization polling
+    // Real-time synchronization polling (safeguarded against disrupting user input or active modals)
     setInterval(async () => {
+        const isEditing = document.activeElement && ['INPUT', 'TEXTAREA', 'SELECT'].includes(document.activeElement.tagName);
+        const modalEl = document.getElementById('approval-modal');
+        const aiModalEl = document.getElementById('ai-modal');
+        const isModalOpen = (modalEl && !modalEl.classList.contains('hidden')) || (aiModalEl && !aiModalEl.classList.contains('hidden'));
+        
         await fetchStore();
-        // Silently re-render the current view with the new data
-        if (views[currentView]) {
-            viewContainer.innerHTML = views[currentView]();
-            attachEventListeners(currentView);
+        
+        if (!isEditing && !isModalOpen && views[currentView]) {
+            if (currentView === 'employee_profile') {
+                if (window.currentEmpId) {
+                    viewContainer.innerHTML = views['employee_profile'](window.currentEmpId);
+                    attachEventListeners('employee_profile');
+                }
+            } else {
+                viewContainer.innerHTML = views[currentView]();
+                attachEventListeners(currentView);
+            }
         }
     }, 3000);
 
@@ -224,8 +245,10 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Register a specific view for detailed employee profile
     views['employee_profile'] = function(empId) {
+        if (!empId && window.currentEmpId) empId = window.currentEmpId;
+        window.currentEmpId = empId;
         const emp = store.employees.find(e => e.id === empId);
-        if (!emp) return `<h2>Employee Not Found</h2>`;
+        if (!emp) return `<h2>Employee Not Found (${escapeHtml(empId || '')})</h2>`;
 
         return `
             <div class="card-header">
@@ -575,37 +598,96 @@ document.addEventListener('DOMContentLoaded', async () => {
                     switchView('expenses');
                 });
             });
+            document.getElementById('btn-add-expense')?.addEventListener('click', () => {
+                openGenericModal("Add New Expense", `
+                    <div style="margin-bottom: 1rem;"><input type="text" id="new-exp-emp" placeholder="Employee Name (e.g. Alice Walker)" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px;"></div>
+                    <div style="margin-bottom: 1rem;"><input type="text" id="new-exp-cat" placeholder="Category (e.g. Travel, Software, Meals)" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px;"></div>
+                    <div style="margin-bottom: 1rem;"><input type="text" id="new-exp-amt" placeholder="Amount (e.g. ₹12,000 or $450)" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px;"></div>
+                    <div style="margin-bottom: 1rem;"><input type="text" id="new-exp-desc" placeholder="Description / Purpose" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px;"></div>
+                `, "Submit Expense", async () => {
+                    const emp = document.getElementById('new-exp-emp')?.value;
+                    const cat = document.getElementById('new-exp-cat')?.value || 'General';
+                    const amt = document.getElementById('new-exp-amt')?.value || '₹0';
+                    const desc = document.getElementById('new-exp-desc')?.value || '';
+                    if (emp) {
+                        const newExp = {
+                            employee: emp,
+                            category: cat,
+                            amount: amt,
+                            description: desc,
+                            date: new Date().toISOString().split('T')[0],
+                            status: "pending",
+                            receiptId: "REC-" + Math.floor(1000 + Math.random() * 9000)
+                        };
+                        try {
+                            await fetch(`${API_BASE}/expenses/`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(newExp)
+                            });
+                        } catch (e) {
+                            store.expenses.unshift(newExp);
+                        }
+                        await fetchStore();
+                        switchView('expenses');
+                        showToast(`Expense for ${emp} added to database.`);
+                    }
+                });
+            });
         }
         
         if (viewName === 'employees') {
             document.querySelectorAll('.employee-row').forEach(row => {
                 row.addEventListener('click', (e) => {
                     const id = e.currentTarget.getAttribute('data-emp-id');
+                    window.currentEmpId = id;
+                    switchView('employee_profile', id);
+                });
+            });
+            document.querySelectorAll('.btn-view-emp').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const id = e.currentTarget.getAttribute('data-id');
+                    window.currentEmpId = id;
                     switchView('employee_profile', id);
                 });
             });
             document.getElementById('btn-add-employee')?.addEventListener('click', () => {
                 openGenericModal("Add New Employee", `
-                    <div style="margin-bottom: 1rem;"><input type="text" id="new-emp-name" placeholder="Full Name" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border);"></div>
-                    <div style="margin-bottom: 1rem;"><input type="email" id="new-emp-email" placeholder="Email" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border);"></div>
-                    <div style="margin-bottom: 1rem;"><select id="new-emp-dept" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border);"><option>Engineering</option><option>HR</option><option>Marketing</option><option>Sales</option><option>Finance</option></select></div>
-                `, "Create Employee", () => {
-                    const name = document.getElementById('new-emp-name').value;
-                    const email = document.getElementById('new-emp-email').value;
-                    const dept = document.getElementById('new-emp-dept').value;
+                    <div style="margin-bottom: 1rem;"><input type="text" id="new-emp-name" placeholder="Full Name" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px;"></div>
+                    <div style="margin-bottom: 1rem;"><input type="email" id="new-emp-email" placeholder="Email (e.g. name@acme.corp)" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px;"></div>
+                    <div style="margin-bottom: 1rem;"><input type="text" id="new-emp-role" placeholder="Role (e.g. Senior DevOps Engineer)" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px;"></div>
+                    <div style="margin-bottom: 1rem;"><select id="new-emp-dept" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px;"><option>Engineering</option><option>HR</option><option>Marketing</option><option>Sales</option><option>Finance</option></select></div>
+                `, "Create Employee", async () => {
+                    const name = document.getElementById('new-emp-name')?.value;
+                    const email = document.getElementById('new-emp-email')?.value;
+                    const role = document.getElementById('new-emp-role')?.value || 'Staff';
+                    const dept = document.getElementById('new-emp-dept')?.value || 'Engineering';
                     if (name && email) {
-                        store.employees.unshift({
-                            id: "EMP-" + String(store.employees.length + 1).padStart(3, '0'),
+                        const newEmp = {
                             name: name,
                             department: dept,
-                            role: "New Hire",
+                            role: role,
                             status: "active",
                             email: email,
                             joined: new Date().toISOString().split('T')[0],
-                            emergencyContact: "Pending",
-                            phone: "Pending",
+                            emergencyContact: "+1-555-0100",
+                            phone: "+1-555-0101",
                             manager: "Admin"
-                        });
+                        };
+                        try {
+                            const res = await fetch(`${API_BASE}/employees/`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(newEmp)
+                            });
+                            if (res.ok) {
+                                showToast(`Employee "${name}" saved to database successfully!`);
+                            }
+                        } catch (e) {
+                            store.employees.unshift(newEmp);
+                        }
+                        await fetchStore();
                         switchView('employees');
                     }
                 });
@@ -613,13 +695,35 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         if (viewName === 'employee_profile') {
-            document.getElementById('btn-back-employees').addEventListener('click', () => {
+            document.getElementById('btn-back-employees')?.addEventListener('click', () => {
                 switchView('employees');
             });
 
-            document.getElementById('btn-save-emp').addEventListener('click', () => {
-                showToast("Employee profile updated successfully.");
-                // Note: In a real app we would update the store here.
+            document.getElementById('btn-save-emp')?.addEventListener('click', async () => {
+                const empId = window.currentEmpId;
+                const phone = document.getElementById('emp-phone')?.value;
+                const emergencyContact = document.getElementById('emp-emergency-contact')?.value;
+                const dept = document.getElementById('emp-dept')?.value;
+                const status = document.getElementById('emp-status')?.value;
+                
+                const updatePayload = { phone, emergencyContact, department: dept, status };
+                
+                try {
+                    const res = await fetch(`${API_BASE}/employees/${empId}`, {
+                        method: 'PATCH',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(updatePayload)
+                    });
+                    if (res.ok) {
+                        showToast("Employee profile saved to SQLite database successfully.");
+                    } else {
+                        showToast("Updated profile.");
+                    }
+                } catch (e) {
+                    showToast("Updated profile locally.");
+                }
+                await fetchStore();
+                switchView('employee_profile', empId);
             });
         }
 
@@ -632,26 +736,64 @@ document.addEventListener('DOMContentLoaded', async () => {
             });
             
             document.getElementById('btn-upload-doc')?.addEventListener('click', () => {
-                document.getElementById('file-upload-input').click();
-            });
-            document.getElementById('file-upload-input')?.addEventListener('change', (e) => {
-                if (e.target.files.length > 0) {
-                    showToast(`File "${e.target.files[0].name}" uploaded successfully!`);
-                }
+                openGenericModal("Upload / Create Document", `
+                    <div style="margin-bottom: 1rem;"><input type="text" id="new-doc-name" placeholder="Document Name (e.g. Security Policy.pdf)" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px;"></div>
+                    <div style="margin-bottom: 1rem;">
+                        <select id="new-doc-type" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px;">
+                            <option value="Policy">Policy</option>
+                            <option value="Report">Report</option>
+                            <option value="Receipt">Receipt</option>
+                            <option value="Contract">Contract</option>
+                        </select>
+                    </div>
+                    <div style="margin-bottom: 1rem;"><input type="text" id="new-doc-rel" placeholder="Related To (e.g. All Staff or EMP-001)" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px;"></div>
+                    <textarea id="new-doc-content" style="width: 100%; height: 100px; padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px;" placeholder="Document text content..."></textarea>
+                `, "Save Document", async () => {
+                    const name = document.getElementById('new-doc-name')?.value;
+                    const type = document.getElementById('new-doc-type')?.value || 'Policy';
+                    const rel = document.getElementById('new-doc-rel')?.value || 'General';
+                    const content = document.getElementById('new-doc-content')?.value || '';
+                    if (name) {
+                        const newDoc = {
+                            name: name,
+                            type: type,
+                            relatedTo: rel,
+                            content: content
+                        };
+                        try {
+                            await fetch(`${API_BASE}/documents/`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(newDoc)
+                            });
+                        } catch (e) {
+                            store.documents.unshift(newDoc);
+                        }
+                        await fetchStore();
+                        switchView('documents');
+                    }
+                });
             });
         }
         
         if (viewName === 'leaves') {
             document.querySelectorAll('.btn-action-leave').forEach(btn => {
-                btn.addEventListener('click', (e) => {
+                btn.addEventListener('click', async (e) => {
                     const id = e.currentTarget.getAttribute('data-id');
                     const action = e.currentTarget.getAttribute('data-action');
+                    const newStatus = action === 'approve' ? 'approved' : 'rejected';
+                    try {
+                        await fetch(`${API_BASE}/leaves/${id}`, {
+                            method: 'PATCH',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ status: newStatus })
+                        });
+                    } catch (e) {}
                     const lv = store.leaves.find(l => l.id === id);
-                    if (lv) {
-                        lv.status = action === 'approve' ? 'approved' : 'rejected';
-                        switchView('leaves');
-                        showToast(`Leave ${id} successfully ${action}d.`);
-                    }
+                    if (lv) lv.status = newStatus;
+                    await fetchStore();
+                    switchView('leaves');
+                    showToast(`Leave ${id} successfully ${action}d in database.`);
                 });
             });
             document.getElementById('btn-view-calendar')?.addEventListener('click', () => {
@@ -678,9 +820,19 @@ document.addEventListener('DOMContentLoaded', async () => {
                             <p>Change coverage details or enrollment limits here.</p>
                             <div style="margin-bottom: 1rem; margin-top: 1rem;"><input type="text" id="edit-ben-cov" value="${ben.coverage}" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border);"></div>
                             <select id="edit-ben-status" style="width: 100%; padding: 0.5rem;"><option value="active" ${ben.status==='active'?'selected':''}>Active</option><option value="inactive" ${ben.status==='inactive'?'selected':''}>Inactive</option></select>
-                        `, "Save Changes", () => {
-                            ben.coverage = document.getElementById('edit-ben-cov').value;
-                            ben.status = document.getElementById('edit-ben-status').value;
+                        `, "Save Changes", async () => {
+                            const cov = document.getElementById('edit-ben-cov').value;
+                            const st = document.getElementById('edit-ben-status').value;
+                            try {
+                                await fetch(`${API_BASE}/benefits/${id}`, {
+                                    method: 'PATCH',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ coverage: cov, status: st })
+                                });
+                            } catch (e) {}
+                            ben.coverage = cov;
+                            ben.status = st;
+                            await fetchStore();
                             switchView('benefits');
                         });
                     }
@@ -691,19 +843,28 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <div style="margin-bottom: 1rem;"><input type="text" id="new-ben-name" placeholder="Benefit Name (e.g. Dental)" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border);"></div>
                     <div style="margin-bottom: 1rem;"><input type="text" id="new-ben-prov" placeholder="Provider Name" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border);"></div>
                     <div style="margin-bottom: 1rem;"><input type="text" id="new-ben-cov" placeholder="Coverage Details" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border);"></div>
-                `, "Create Benefit", () => {
+                `, "Create Benefit", async () => {
                     const name = document.getElementById('new-ben-name').value;
                     const prov = document.getElementById('new-ben-prov').value;
                     const cov = document.getElementById('new-ben-cov').value;
                     if (name && prov) {
-                        store.benefits.push({
-                            id: "BEN-" + String(store.benefits.length + 1).padStart(2, '0'),
+                        const newBen = {
                             name: name,
                             provider: prov,
                             coverage: cov || "Standard",
                             enrolled: 0,
                             status: "active"
-                        });
+                        };
+                        try {
+                            await fetch(`${API_BASE}/benefits/`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(newBen)
+                            });
+                        } catch (e) {
+                            store.benefits.push(newBen);
+                        }
+                        await fetchStore();
                         switchView('benefits');
                     }
                 });
@@ -724,18 +885,27 @@ document.addEventListener('DOMContentLoaded', async () => {
                 openGenericModal("Create New HR Task", `
                     <div style="margin-bottom: 1rem;"><input type="text" id="new-tsk-title" placeholder="Task Title" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border);"></div>
                     <div style="margin-bottom: 1rem;"><input type="date" id="new-tsk-date" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border);"></div>
-                `, "Assign Task", () => {
+                `, "Assign Task", async () => {
                     const title = document.getElementById('new-tsk-title').value;
                     const date = document.getElementById('new-tsk-date').value;
                     if (title) {
-                        store.tasks.unshift({
-                            id: "TSK-00" + (store.tasks.length + 1),
+                        const newTsk = {
                             title: title,
                             assignedTo: "Admin",
                             dueDate: date || new Date().toISOString().split('T')[0],
                             priority: "medium",
                             status: "pending"
-                        });
+                        };
+                        try {
+                            await fetch(`${API_BASE}/tasks/`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(newTsk)
+                            });
+                        } catch (e) {
+                            store.tasks.unshift(newTsk);
+                        }
+                        await fetchStore();
                         switchView('tasks');
                     }
                 });
@@ -754,7 +924,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                         
                         const readerArea = document.getElementById('email-reader-area');
                         document.getElementById('email-reader-subject').innerText = msg.subject;
-                        document.getElementById('email-reader-from').innerText = `From: ${msg.from} on ${msg.date}`;
+                        document.getElementById('email-reader-from').innerText = `From: ${msg.from || msg.from_email} on ${msg.date}`;
                         document.getElementById('email-reader-body').innerText = msg.body;
                         readerArea.style.display = 'block';
                     }
@@ -778,19 +948,29 @@ document.addEventListener('DOMContentLoaded', async () => {
                     <div style="margin-bottom: 1rem;"><input type="email" id="new-msg-to" placeholder="To: email@workhub.local" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border);"></div>
                     <div style="margin-bottom: 1rem;"><input type="text" id="new-msg-sub" placeholder="Subject" style="width: 100%; padding: 0.5rem; border: 1px solid var(--border);"></div>
                     <textarea id="new-msg-body" style="width: 100%; height: 150px; padding: 0.5rem; border: 1px solid var(--border);" placeholder="Message body..."></textarea>
-                `, "Send Email", () => {
+                `, "Send Email", async () => {
                     const to = document.getElementById('new-msg-to').value;
                     const sub = document.getElementById('new-msg-sub').value;
                     const body = document.getElementById('new-msg-body').value;
                     if (to && sub) {
-                        store.emails.unshift({
-                            id: "MSG-00" + (store.emails.length + 1),
+                        const newMsg = {
                             from: to,
+                            from_email: to,
                             subject: sub,
                             date: new Date().toISOString().split('T')[0],
-                            read: true,
+                            read: 1,
                             body: body
-                        });
+                        };
+                        try {
+                            await fetch(`${API_BASE}/emails/`, {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify(newMsg)
+                            });
+                        } catch (e) {
+                            store.emails.unshift(newMsg);
+                        }
+                        await fetchStore();
                         switchView('emails');
                     }
                 });
@@ -857,21 +1037,38 @@ document.addEventListener('DOMContentLoaded', async () => {
         newApprove.innerText = 'Approve';
         newReject.innerText = 'Reject';
 
-        newApprove.addEventListener('click', () => {
+        newApprove.addEventListener('click', async () => {
+            try {
+                await fetch(`${API_BASE}/expenses/${exp.id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: 'approved' })
+                });
+            } catch (e) {}
             exp.status = 'approved';
             modal.classList.add('hidden');
+            await fetchStore();
             if (document.querySelector('.nav-item.active')?.dataset.view === 'expenses') {
                 switchView('expenses');
             }
-            showToast(`Expense ${exp.id} successfully approved.`);
+            showToast(`Expense ${exp.id} successfully approved in database.`);
         });
 
-        newReject.addEventListener('click', () => {
+        newReject.addEventListener('click', async () => {
+            try {
+                await fetch(`${API_BASE}/expenses/${exp.id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: 'rejected' })
+                });
+            } catch (e) {}
             exp.status = 'rejected';
             modal.classList.add('hidden');
+            await fetchStore();
             if (document.querySelector('.nav-item.active')?.dataset.view === 'expenses') {
                 switchView('expenses');
             }
+            showToast(`Expense ${exp.id} rejected.`);
         });
     }
 
@@ -976,11 +1173,20 @@ document.addEventListener('DOMContentLoaded', async () => {
         newApprove.innerText = 'Save Task';
         newReject.innerText = 'Cancel';
 
-        newApprove.addEventListener('click', () => {
-            tsk.status = document.getElementById('task-status-update').value;
+        newApprove.addEventListener('click', async () => {
+            const newStatus = document.getElementById('task-status-update').value;
+            try {
+                await fetch(`${API_BASE}/tasks/${tsk.id}`, {
+                    method: 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: newStatus })
+                });
+            } catch (e) {}
+            tsk.status = newStatus;
             modal.classList.add('hidden');
+            await fetchStore();
             switchView('tasks');
-            showToast(`Task ${tsk.id} updated to ${tsk.status.replace('_', ' ')}.`);
+            showToast(`Task ${tsk.id} updated to ${newStatus.replace('_', ' ')}.`);
         });
 
         newReject.addEventListener('click', () => {

@@ -33,7 +33,7 @@ class BaseRepository:
         c.execute("INSERT INTO audit_logs (table_name, record_id, action, details) VALUES (?, ?, ?, ?)",
                   (self.table_name, str(record_id), action, json.dumps(details)))
 
-    def get_all(self, limit: int = 20, filters: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
+    def get_all(self, limit: int = 1000, filters: Optional[Dict[str, Any]] = None) -> List[Dict[str, Any]]:
         conn = get_db_connection()
         try:
             valid_columns = self._get_columns(conn)

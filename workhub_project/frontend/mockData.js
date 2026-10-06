@@ -721,6 +721,18 @@ const mockData = {
             "emergencyContact": null,
             "phone": null,
             "manager": null
+        },
+        {
+            "id": "EMP-047",
+            "name": "Elena Rostova",
+            "department": "Engineering",
+            "role": "Senior DevOps Engineer",
+            "status": "active",
+            "email": "elena.rostova@acme.corp",
+            "joined": "2026-10-06",
+            "emergencyContact": "+1-555-0198",
+            "phone": "+1-555-0199",
+            "manager": "Admin"
         }
     ],
     "expenses": [
@@ -827,6 +839,30 @@ const mockData = {
             "dueDate": null,
             "priority": "high",
             "status": "pending"
+        },
+        {
+            "id": "TSK-005",
+            "title": "Setup AWS IAM and Kubernetes Cluster Access",
+            "assignedTo": "Elena Rostova",
+            "dueDate": "2026-10-09",
+            "priority": "high",
+            "status": "pending"
+        },
+        {
+            "id": "TSK-006",
+            "title": "Complete Security Compliance Training",
+            "assignedTo": "Elena Rostova",
+            "dueDate": "2026-10-13",
+            "priority": "medium",
+            "status": "pending"
+        },
+        {
+            "id": "TSK-007",
+            "title": "Schedule 1-on-1 Intro with Engineering Team",
+            "assignedTo": "Elena Rostova",
+            "dueDate": "2026-10-11",
+            "priority": "low",
+            "status": "pending"
         }
     ],
     "leaves": [
@@ -904,6 +940,14 @@ const mockData = {
         }
     ],
     "emails": [
+        {
+            "id": "MSG-005",
+            "from_email": "elena.rostova@acme.corp",
+            "subject": "Welcome to Acme Corp, Elena Rostova!",
+            "date": "2026-10-06",
+            "read": 0,
+            "body": "Hello Elena,\n\nWelcome to Acme Corp! We're thrilled to have you join us as our new Senior DevOps Engineer in the Engineering department. Your manager is Admin.\n\nYour details:\n- Email: elena.rostova@acme.corp\n- Phone: +1-555-0199\n- Emergency Contact: +1-555-0198\n\nWe look forward to working with you and supporting your success at Acme Corp.\n\nBest regards,\nHR Team"
+        },
         {
             "id": "MSG-001",
             "from_email": "bob.w@workhub.local",
