@@ -1,15 +1,17 @@
 # ⚡ Autonomous AI Task Worker
+### *Enterprise Loop Engineering & Playwright Web Browser Automation*
 
 <p align="center">
   <img src="https://img.shields.io/badge/CentrAlign%20AI-AI%20Engineering%20Intern-7c3aed?style=for-the-badge&logo=openai&logoColor=white" alt="CentrAlign AI" />
-  <img src="https://img.shields.io/badge/Architecture-4--Facet%20ReAct-06b6d4?style=for-the-badge&logo=diagramsdotnet&logoColor=white" alt="4-Facet Architecture" />
+  <img src="https://img.shields.io/badge/Playwright-Browser%20Automation-2e8555?style=for-the-badge&logo=playwright&logoColor=white" alt="Playwright Automation" />
+  <img src="https://img.shields.io/badge/Loop%20Engineering-4--Facet%20ReAct-06b6d4?style=for-the-badge&logo=diagramsdotnet&logoColor=white" alt="4-Facet Loop Engineering" />
   <img src="https://img.shields.io/badge/Security-Strict%20HITL%20Guard-10b981?style=for-the-badge&logo=guardrails&logoColor=white" alt="HITL Security" />
   <img src="https://img.shields.io/badge/Python-3.11%2B-3b82f6?style=for-the-badge&logo=python&logoColor=white" alt="Python 3.11" />
   <img src="https://img.shields.io/badge/Database-SQLite%20(Real%20Mutations)-f59e0b?style=for-the-badge&logo=sqlite&logoColor=white" alt="SQLite Real DB" />
 </p>
 
 <p align="center">
-  <strong>An autonomous, enterprise-grade AI worker prototype that reasons, executes real tool operations, enforces human-in-the-loop authorization, and deterministically verifies outcomes against live databases.</strong>
+  <strong>A production-ready autonomous AI worker combining advanced 4-Facet Loop Engineering with full-fidelity Playwright web browser automation. The agent autonomously reasons over complex goals, interacts dynamically with web interfaces, executes real database mutations, enforces human authorization guardrails, and deterministically verifies outcomes against live system state.</strong>
 </p>
 
 ---
@@ -24,7 +26,7 @@
 6. [💡 Our 5 Unique Engineering Strategies](#-our-5-unique-engineering-strategies)
 7. [🏢 What is WorkHub? (Environment Simulation)](#-what-is-workhub-environment-simulation)
 8. [🏗️ Complete System Architecture](#-complete-system-architecture)
-9. [🔄 Detailed 4-Facet Execution Loop](#-detailed-4-facet-execution-loop)
+9. [🔄 Detailed 4-Facet Execution Loop (Loop Engineering)](#-detailed-4-facet-execution-loop-loop-engineering)
 10. [🛡️ Security & Human-In-The-Loop (HITL) Guardrails](#-security--human-in-the-loop-hitl-guardrails)
 11. [🚀 Quick Start & One-Click Run](#-quick-start--one-click-run)
 12. [🧪 Ready-To-Run Benchmark Tasks](#-ready-to-run-benchmark-tasks)
@@ -37,36 +39,48 @@
 
 ## 🌟 Executive Summary
 
-In enterprise environments, human employees spend countless hours manually context-switching: reading emails, cross-referencing company policies, extracting invoice details, typing records into internal databases, and verifying status updates.
+In enterprise environments, human employees spend countless hours manually context-switching: reading emails, navigating internal HR portals, cross-referencing company policies, filling out multi-step forms, and verifying database status updates.
 
-This project delivers a **fully autonomous AI Task Worker** that takes high-level natural language operational goals and autonomously completes them end-to-end.
+This project delivers a **fully autonomous AI Task Worker** powered by **Advanced Loop Engineering** and **Playwright Web Browser Automation** that transforms high-level natural language instructions into verified, end-to-end operational execution.
+
+### 🔑 Two Pillars of Our Architecture:
+1. **🔄 Advanced Loop Engineering (`DECIDE ➔ GUARD ➔ ACT ➔ VERIFY`):**
+   - **Autonomous Subgoal Decomposition:** Automatically breaks complex prompts into manageable, sequential milestones (`G1`, `G2`, `G3`).
+   - **Deterministic Security Guard:** Enforces strict read-only defaults (`mode=ro`), blocks forbidden schema tampering (DDL), and intercepts all financial/data mutations for real-time human authorization.
+   - **Self-Healing Loop Recovery:** Automatically breaks repetitive action loops and seamlessly switches between LLM providers (Groq, Gemini, NVIDIA NIM, Ollama) on rate limits.
+   - **Independent State Verification:** Directly queries live SQLite records and checks DOM states to produce hard evidence instead of LLM hallucinations.
+
+2. **🌐 Playwright Browser Automation Engine:**
+   - **Zero-Hardcoding Semantic Target Resolution:** Discovers interactive buttons, form inputs, dropdowns, and modals dynamically using natural WAI-ARIA roles, accessible labels, placeholder text, and text matching.
+   - **Non-Destructive Single-Page App (SPA) Stabilization:** Preserves open modal dialogs and form states without destructive page reloads.
+   - **Full Human-Fidelity Interaction:** Natively executes 10 browser primitives (`open_page`, `click`, `fill`, `select`, `hover`, `press_key`, `upload_file`, `scroll`, `observe`, `take_screenshot`).
 
 ```
- [User Goal] ──▶ [Decompose Subgoals] ──▶ [Safe Read (mode=ro)]
-                                                 │
-                                                 ▼
-                                        [Security Guard]
-                                                 │
- ┌───────────────────────────────────────────────┴──────────────────────────────────────────────┐
- ▼                                               ▼                                              ▼
-[DDL Schema Change]                     [Read-Only Query]                            [Data Mutation (Write)]
-        │                                       │                                               │
- ❌ AUTO-REJECT                           🟢 AUTO-ALLOW                            🟡 PAUSE & REQUEST APPROVAL
- (Strict Safety Policy)                 (Safe Execution)                                        │
-                                                                                 (Human Approves in UI)
-                                                                                                │
-                                                                                                ▼
-                                                                                   [Execute Mutation + Auto-ID]
-                                                                                                │
-                                                                                                ▼
-                                                                                   [Targeted SELECT Check]
-                                                                                                │
-                                                                                                ▼
-                                                                                         [Verified Done]
+  [User Operational Goal] ──▶ [Loop Engineering: Decompose Subgoals]
+                                            │
+                                            ▼
+                           [Security Guard: Policy & Mode Check]
+                                            │
+         ┌──────────────────────────────────┴──────────────────────────────────┐
+         ▼                                                                     ▼
+[🌐 Playwright Browser Worker]                                 [🗄️ Database & API Worker]
+  • Opens Single-Page Apps (WorkHub Web)                         • Executes SQL in mode=ro
+  • WAI-ARIA Semantic Element Discovery                          • Zero-Null Sequential Auto-ID
+  • Non-Destructive Form & Modal Entry                           • Immutable Audit Logging
+         │                                                                     │
+         └──────────────────────────────────┬──────────────────────────────────┘
+                                            ▼
+                          [🟡 Human Authorization (If Mutation)]
+                                            │
+                                            ▼
+                          [🔍 Independent State Verification]
+                                            │
+                                            ▼
+                       [🏆 Final Verified Report & Audit Trail]
 ```
 
 > [!IMPORTANT]
-> **Actual Execution Over Simulated Autonomy:** This system executes real SQL queries and transactions against an active SQLite database (`company_database.sqlite`), generates sequential primary keys (`EMP-xxx`, `EXP-xxxx`), logs audit trails, and provides real database observation evidence rather than mocked status strings.
+> **Actual Execution Over Simulated Autonomy:** This system executes real Playwright browser interactions on live web pages (`http://localhost:3000`) and real ACID transactions against active SQLite storage (`company_database.sqlite`), generates sequential primary keys (`EMP-xxx`, `EXP-xxxx`), logs audit trails, and provides real database observation evidence rather than mocked status strings.
 
 ---
 
@@ -345,9 +359,9 @@ flowchart TD
 
 ---
 
-## 🔄 Detailed 4-Facet Execution Loop
+## 🔄 Detailed 4-Facet Execution Loop (Loop Engineering)
 
-Every single step performed by the agent passes through our **4-Facet Lifecycle**:
+Every single step performed by the agent passes through our **4-Facet Loop Engineering Architecture** (`DECIDE` ──▶ `GUARD` ──▶ `ACT` ──▶ `VERIFY`):
 
 ```mermaid
 sequenceDiagram
