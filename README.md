@@ -19,21 +19,22 @@
 ## 📑 Interactive Table of Contents
 
 1. [🌟 Executive Summary](#-executive-summary)
-2. [🎯 Evaluator Q&A: Direct Answers to CentrAlign AI Criteria](#-evaluator-qa-direct-answers-to-centralign-ai-criteria)
-3. [💡 System Novelty & What Makes Our Solution Special](#-system-novelty--what-makes-our-solution-special)
-4. [✨ Comprehensive Feature Catalog](#-comprehensive-feature-catalog)
-5. [🌐 Playwright Browser Automation Engine](#-playwright-browser-automation-engine)
-6. [💡 Our 5 Unique Engineering Strategies](#-our-5-unique-engineering-strategies)
-7. [🏢 What is WorkHub? (Environment Simulation)](#-what-is-workhub-environment-simulation)
-8. [🏗️ Complete System Architecture](#-complete-system-architecture)
-9. [🔄 Detailed 4-Facet Execution Loop (Loop Engineering)](#-detailed-4-facet-execution-loop-loop-engineering)
-10. [🛡️ Security & Human-In-The-Loop (HITL) Guardrails](#-security--human-in-the-loop-hitl-guardrails)
-11. [🚀 Quick Start & One-Click Run](#-quick-start--one-click-run)
-12. [🧪 Ready-To-Run Benchmark Tasks](#-ready-to-run-benchmark-tasks)
-13. [🔍 Live Verification & Evaluator Evidence](#-live-verification--evaluator-evidence)
-14. [🧪 Comprehensive Unit Test Suites & Verification Results](#-comprehensive-unit-test-suites--verification-results)
-15. [🔮 Known Limitations & Future Roadmap](#-known-limitations--future-roadmap)
-16. [🛠️ Tech Stack & Provider Fallback Chain](#-tech-stack--provider-fallback-chain)
+2. [📸 Visual Platform Tour & Live Execution Screenshots](#-visual-platform-tour--live-execution-screenshots)
+3. [🎯 Evaluator Q&A: Direct Answers to CentrAlign AI Criteria](#-evaluator-qa-direct-answers-to-centralign-ai-criteria)
+4. [💡 System Novelty & What Makes Our Solution Special](#-system-novelty--what-makes-our-solution-special)
+5. [✨ Comprehensive Feature Catalog](#-comprehensive-feature-catalog)
+6. [🌐 Playwright Browser Automation Engine](#-playwright-browser-automation-engine)
+7. [💡 Our 5 Unique Engineering Strategies](#-our-5-unique-engineering-strategies)
+8. [🏢 What is WorkHub? (Environment Simulation)](#-what-is-workhub-environment-simulation)
+9. [🏗️ Complete System Architecture](#-complete-system-architecture)
+10. [🔄 Detailed 4-Facet Execution Loop (Loop Engineering)](#-detailed-4-facet-execution-loop-loop-engineering)
+11. [🛡️ Security & Human-In-The-Loop (HITL) Guardrails](#-security--human-in-the-loop-hitl-guardrails)
+12. [🚀 Quick Start & One-Click Run](#-quick-start--one-click-run)
+13. [🧪 Ready-To-Run Benchmark Tasks](#-ready-to-run-benchmark-tasks)
+14. [🔍 Live Verification & Evaluator Evidence](#-live-verification--evaluator-evidence)
+15. [🧪 Comprehensive Unit Test Suites & Verification Results](#-comprehensive-unit-test-suites--verification-results)
+16. [🔮 Known Limitations & Future Roadmap](#-known-limitations--future-roadmap)
+17. [🛠️ Tech Stack & Provider Fallback Chain](#-tech-stack--provider-fallback-chain)
 
 ---
 
@@ -81,6 +82,42 @@ This project delivers a **fully autonomous AI Task Worker** powered by **Advance
 
 > [!IMPORTANT]
 > **Actual Execution Over Simulated Autonomy:** This system executes real Playwright browser interactions on live web pages (`http://localhost:3000`) and real ACID transactions against active SQLite storage (`company_database.sqlite`), generates sequential primary keys (`EMP-xxx`, `EXP-xxxx`), logs audit trails, and provides real database observation evidence rather than mocked status strings.
+
+---
+
+## 📸 Visual Platform Tour & Live Execution Screenshots
+
+<div align="center">
+
+### 1. 🖥️ Task Assignment & Interactive Scenario Launchpad
+![Task Assignment Console](docs/screenshots/01_task_assignment_screen.png)
+*Clean command interface supporting arbitrary natural language prompts and quick scenario templates.*
+
+---
+
+### 2. ⚡ Live 4-Facet Execution Stream & 5-Phase Pipeline Stepper
+![Live Execution Stream](docs/screenshots/02_live_execution_dashboard.png)
+*Real-time horizontal phase stepper (`INGESTION ➔ PLANNING ➔ EXECUTION ➔ VERIFY ➔ COMPLETE`) with live 4-Facet rows (`DECIDE`, `GUARD`, `ACT`, `VERIFY`).*
+
+---
+
+### 3. 🔍 Live Playwright Browser Observation & Evaluation Proof (G1)
+![Evaluation Verification Proof](docs/screenshots/03_evaluation_verification_proof.png)
+*Right-side Inspector Drawer displaying live DOM hash, page URL, and evaluator compliance checklist.*
+
+---
+
+### 4. 📜 Complete Autonomous Agent Step Trace
+![Autonomous Agent Step Trace](docs/screenshots/04_agent_execution_trace.png)
+*Full chronological thoughts, actions, tool parameters, and observation outputs.*
+
+---
+
+### 5. 🏆 Final Verified Execution Report & Compliance Checklist
+![Final Verified Report](docs/screenshots/05_final_verified_report.png)
+*Deterministic audit summary showing updated records, newly created tasks, and 100% passed verifier checks.*
+
+</div>
 
 ---
 
