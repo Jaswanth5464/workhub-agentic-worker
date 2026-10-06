@@ -101,25 +101,31 @@ This project delivers a **fully autonomous AI Task Worker** powered by **Advance
 
 ---
 
-### 3. 🔍 Live Playwright Browser Observation & Evaluation Proof (G1)
+### 3. 🧩 Decomposed Subgoals & Step-by-Step 4-Facet Execution Loop
+![Decomposed Subgoals & 4-Facet Stream](docs/screenshots/07_live_subgoals_4facet_execution.png)
+*Detailed subgoal-by-subgoal execution showing active `DECIDE` reasoning, `GUARD` policy check, `ACT` Playwright/DB dispatch, and `VERIFY` deterministic confirmation.*
+
+---
+
+### 4. 🔍 Live Playwright Browser Observation & Evaluation Proof (G1)
 ![Evaluation Verification Proof](docs/screenshots/03_evaluation_verification_proof.png)
 *Right-side Inspector Drawer displaying live DOM hash, page URL, and evaluator compliance checklist.*
 
 ---
 
-### 4. 📜 Complete Autonomous Agent Step Trace
+### 5. 📜 Complete Autonomous Agent Step Trace
 ![Autonomous Agent Step Trace](docs/screenshots/04_agent_execution_trace.png)
 *Full chronological thoughts, actions, tool parameters, and observation outputs.*
 
 ---
 
-### 5. 🏆 Complete Task Execution & 100% Verified Subgoals
+### 6. 🏆 Complete Task Execution & 100% Verified Subgoals
 ![Task Completed & Verified](docs/screenshots/06_task_completed_subgoals_verified.png)
 *Full execution view showing 6/6 decomposed subgoals passed, 100% security checks passed, and verified status.*
 
 ---
 
-### 6. 📊 Final Verified Execution Report & Compliance Checklist
+### 7. 📊 Final Verified Execution Report & Compliance Checklist
 ![Final Verified Report](docs/screenshots/05_final_verified_report.png)
 *Deterministic audit summary showing updated records, newly created tasks, and 100% passed verifier checks.*
 
