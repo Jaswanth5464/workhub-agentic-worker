@@ -38,16 +38,27 @@ In enterprise environments, human employees spend countless hours manually conte
 This project delivers a **fully autonomous AI Task Worker** that takes high-level natural language operational goals and autonomously completes them end-to-end.
 
 ```
- [User Goal] ──▶ [Decompose Subgoals] ──▶ [Safe Read (mode=ro)] ──▶ [Security Guard]
-                                                                         │
- ┌───────────────────────────────────────────────────────────────────────┘
- ▼
- ├── [DDL Schema Change] ─────────▶ ❌ AUTO-REJECT (Strict Safety Policy)
- ├── [Read-Only Query]  ─────────▶ 🟢 AUTO-ALLOW (Safe Execution)
- └── [Data Mutation (Write)] ───▶ 🟡 PAUSE & REQUEST HUMAN AUTHORIZATION
-                                        │ (Human Approves in UI)
-                                        ▼
-                                 [Execute Mutation + Auto-ID] ──▶ [Targeted SELECT Verification] ──▶ [Verified Done]
+ [User Goal] ──▶ [Decompose Subgoals] ──▶ [Safe Read (mode=ro)]
+                                                 │
+                                                 ▼
+                                        [Security Guard]
+                                                 │
+ ┌───────────────────────────────────────────────┴──────────────────────────────────────────────┐
+ ▼                                               ▼                                              ▼
+[DDL Schema Change]                     [Read-Only Query]                            [Data Mutation (Write)]
+        │                                       │                                               │
+ ❌ AUTO-REJECT                           🟢 AUTO-ALLOW                            🟡 PAUSE & REQUEST APPROVAL
+ (Strict Safety Policy)                 (Safe Execution)                                        │
+                                                                                 (Human Approves in UI)
+                                                                                                │
+                                                                                                ▼
+                                                                                   [Execute Mutation + Auto-ID]
+                                                                                                │
+                                                                                                ▼
+                                                                                   [Targeted SELECT Check]
+                                                                                                │
+                                                                                                ▼
+                                                                                         [Verified Done]
 ```
 
 > [!IMPORTANT]
@@ -91,17 +102,13 @@ Here are clear, simple-English answers addressing every evaluation dimension and
 
 ## 💡 Our 5 Unique Engineering Strategies
 
-```
- ┌─────────────────────────────────────────────────────────────────────────────────────────────┐
- │                             5 CORE ARCHITECTURAL PILLARS                                    │
- ├─────────────────────────────────────────────────────────────────────────────────────────────┤
- │ 1. 🗄️ Real SQLite Execution     │ Real relational database mutations & ACID transactions.     │
- │ 2. 🛡️ Strict Read-Only Default  │ mode=ro prevents accidental data corruption or unapproved writes.│
- │ 3. 🔢 Zero-Null Auto-ID Engine  │ Computes next sequential ID (EMP-045, EXP-1046) automatically. │
- │ 4. 🔄 4-Facet Tracing Model    │ Clean lifecycle: DECIDE ──▶ GUARD ──▶ ACT ──▶ VERIFY.       │
- │ 5. 🔁 4-Stage LLM Fallback      │ Groq ──▶ Gemini ──▶ NVIDIA ──▶ Ollama (Zero downtime).      │
- └─────────────────────────────────────────────────────────────────────────────────────────────┘
-```
+| # | Pillar | Implementation & Impact |
+|:---|:---|:---|
+| **1** | **🗄️ Real SQLite Execution** | Real relational database mutations, commits & ACID transactions. |
+| **2** | **🛡️ Strict Read-Only Default** | `mode=ro` prevents accidental data corruption or unapproved writes. |
+| **3** | **🔢 Zero-Null Auto-ID Engine** | Computes next sequential ID (`EMP-045`, `EXP-1046`) automatically. |
+| **4** | **🔄 4-Facet Tracing Model** | Clean lifecycle: `DECIDE` ──▶ `GUARD` ──▶ `ACT` ──▶ `VERIFY`. |
+| **5** | **🔁 Multi-Stage LLM Fallback** | Groq ──▶ Gemini ──▶ NVIDIA ──▶ Ollama (Zero downtime). |
 
 ---
 
