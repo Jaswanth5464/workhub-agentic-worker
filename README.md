@@ -266,6 +266,201 @@ sequenceDiagram
    - The verified output is formatted and sent to the evaluator drawer.
 </details>
 
+### 🔬 End-to-End Execution Trace (Exact Inputs & Outputs per Phase)
+
+To demonstrate how the 4-Facet loop executes with deterministic safety, here is a complete trace of an operational and financial task:
+
+#### **🎯 Example Task:**
+> *"Review all pending expenses for Bob Wilson. Cross-reference with company travel policy. If claims under ₹5,000 are compliant, approve them and verify the updated status in the database."*
+
+---
+
+#### **Phase 1: Ingest & Subgoal Decomposition (`DECIDE`)**
+* **Input Payload to Agent Engine (`POST /api/runs`):**
+```json
+{
+  "task": "Review all pending expenses for Bob Wilson. Cross-reference with company travel policy. If claims under ₹5,000 are compliant, approve them and verify the updated status in the database.",
+  "complexity": "medium",
+  "max_iterations": 15
+}
+```
+* **LLM Subgoal Decomposition & Initial Action Output:**
+```json
+{
+  "thought": "I need to: 1) Query pending expenses for Bob Wilson, 2) Check travel policy limits for local travel, 3) Approve eligible claims, 4) Verify the updated records in the database.",
+  "subgoals": [
+    {"id": "G1", "description": "Query pending expense records for Bob Wilson", "status": "in-progress"},
+    {"id": "G2", "description": "Inspect travel policy document DOC-001", "status": "pending"},
+    {"id": "G3", "description": "Submit status update for compliant claims", "status": "pending"},
+    {"id": "G4", "description": "Perform targeted database verification query", "status": "pending"}
+  ],
+  "action": {
+    "tool": "query_database",
+    "parameters": {
+      "query": "SELECT id, employee, category, amount, description, status FROM expenses WHERE employee = 'Bob Wilson' AND status = 'pending';"
+    }
+  }
+}
+```
+
+---
+
+#### **Phase 2: Safe Read & Ground-Truth Observation (`ACT` ──▶ `OBSERVE`)**
+* **Security Check:** Evaluated as `mode=ro` (Safe read-only `SELECT`). **🟢 AUTO-ALLOWED**.
+* **Database Observation (Exact Output returned to Agent Context):**
+```json
+{
+  "success": true,
+  "row_count": 1,
+  "data": [
+    {
+      "id": "EXP-1042",
+      "employee": "Bob Wilson",
+      "category": "Travel",
+      "amount": "3450.00",
+      "description": "Client visit cab fare and metro tickets",
+      "status": "pending"
+    }
+  ]
+}
+```
+
+---
+
+#### **Phase 3: Policy Verification (`DECIDE` ──▶ `ACT`)**
+* **Agent Reasoning & Tool Call:**
+```json
+{
+  "thought": "Found pending expense EXP-1042 for ₹3,450.00 under Travel. Now reading the travel policy document to verify maximum daily limits.",
+  "action": {
+    "tool": "read_document",
+    "parameters": {
+      "document_id": "DOC-001"
+    }
+  }
+}
+```
+* **Document Tool Observation Output:**
+```json
+{
+  "success": true,
+  "document_id": "DOC-001",
+  "title": "Corporate Travel & Commute Reimbursement Policy",
+  "content": "Section 4.2: Local travel and client visit transport up to ₹5,000 per instance is pre-authorized for immediate approval if accompanied by valid descriptions."
+}
+```
+
+---
+
+#### **Phase 4: Security Interception & Human Authorization (`GUARD` ──▶ `HITL`)**
+* **Agent Proposes Mutation Action:**
+```json
+{
+  "thought": "Expense EXP-1042 is ₹3,450, which is below the ₹5,000 policy threshold. Proposing status update to 'approved'.",
+  "action": {
+    "tool": "query_database",
+    "parameters": {
+      "query": "UPDATE expenses SET status = 'approved' WHERE id = 'EXP-1042';"
+    }
+  }
+}
+```
+* **Security Guard Intercepts Mutation & Emits Realtime SSE Event:**
+```json
+{
+  "event": "approval_required",
+  "data": {
+    "run_id": "run-7f9a2b",
+    "step": 3,
+    "risk_level": "HIGH",
+    "operation": "Data Mutation (SQL UPDATE)",
+    "query": "UPDATE expenses SET status = 'approved' WHERE id = 'EXP-1042';",
+    "target_table": "expenses",
+    "target_id": "EXP-1042",
+    "reason": "Financial data modification requires explicit human authorization."
+  }
+}
+```
+* **Human Operator Approves in Web UI (`POST /api/runs/{run_id}/approve`):**
+```json
+{
+  "run_id": "run-7f9a2b",
+  "action_id": "act-step-3",
+  "approved": true,
+  "operator": "Jaswanth (Admin)",
+  "timestamp": "2026-10-06T12:20:00Z"
+}
+```
+
+---
+
+#### **Phase 5: Execution with Auto-ID & ACID Commit (`ACT`)**
+* **Tool Execution Output (Executed with `approval_granted=True`):**
+```json
+{
+  "success": true,
+  "rows_affected": 1,
+  "command": "UPDATE expenses SET status = 'approved' WHERE id = 'EXP-1042';",
+  "audit_logged": true,
+  "audit_id": "AUD-9912"
+}
+```
+
+---
+
+#### **Phase 6: Independent Database Verification (`VERIFY`)**
+* **Agent Runs Targeted Verification Query:**
+```json
+{
+  "thought": "Expense updated. Now running a targeted SELECT query to independently verify that EXP-1042 is saved with status 'approved' in the database.",
+  "action": {
+    "tool": "query_database",
+    "parameters": {
+      "query": "SELECT id, employee, category, amount, status FROM expenses WHERE id = 'EXP-1042';"
+    }
+  }
+}
+```
+* **Ground-Truth Verification Output (Streamed to Live UI Evidence Drawer):**
+```json
+{
+  "verified": true,
+  "evidence": {
+    "table": "expenses",
+    "record": {
+      "id": "EXP-1042",
+      "employee": "Bob Wilson",
+      "category": "Travel",
+      "amount": "3450.00",
+      "status": "approved"
+    }
+  },
+  "verification_timestamp": "2026-10-06T12:20:02Z"
+}
+```
+
+---
+
+#### **Phase 7: Final Verified Report (`DONE`)**
+* **Agent Emits Final Output:**
+```json
+{
+  "thought": "All 4 subgoals completed and verified against database ground truth. Finishing execution.",
+  "subgoals": [
+    {"id": "G1", "description": "Query pending expense records for Bob Wilson", "status": "completed"},
+    {"id": "G2", "description": "Inspect travel policy document DOC-001", "status": "completed"},
+    {"id": "G3", "description": "Submit status update for compliant claims", "status": "completed"},
+    {"id": "G4", "description": "Perform targeted database verification query", "status": "completed"}
+  ],
+  "action": {
+    "tool": "finish",
+    "parameters": {
+      "summary": "Reviewed expense EXP-1042 for Bob Wilson (₹3,450.00). Verified against Travel Policy DOC-001 (Section 4.2). Obtained human approval, approved the claim, and verified persistent database status as 'approved'."
+    }
+  }
+}
+```
+
 ---
 
 ## 🛡️ Security & Human-In-The-Loop (HITL) Guardrails
