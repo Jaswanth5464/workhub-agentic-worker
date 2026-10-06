@@ -206,26 +206,8 @@ export function renderFlow(root, state, callbacks = {}) {
             topApprovalCard.style.border = '2px solid #f59e0b';
             topApprovalCard.style.boxShadow = '0 4px 20px rgba(245, 158, 11, 0.25)';
             const approvalData = state.pendingApproval;
-            topApprovalCard.innerHTML = `
-                <div class="hitl-panel-header">
-                    <span style="font-size:22px;">⚠️</span>
-                    <div>
-                        <strong style="font-size:14px; color:var(--color-ink);">HUMAN AUTHORIZATION REQUIRED</strong>
-                        <div style="font-size:12px; color:var(--color-muted);">${escapeHtml(approvalData.reason || 'This operation modifies database records, cancels items, or mutates state.')}</div>
-                    </div>
-                    <span class="badge-risk ${approvalData.risk?.toLowerCase() || 'high'}">${escapeHtml(approvalData.risk || 'HIGH')} RISK</span>
-                </div>
-                
-                <div class="hitl-preview-box">
-                    <div style="font-size:12px; font-weight:600; margin-bottom:4px; color:var(--color-ink);">Target Tool: <code>${escapeHtml(approvalData.tool || 'write_operation')}</code></div>
-                    <pre class="hitl-args-preview">${escapeHtml(JSON.stringify(approvalData.preview || approvalData.args || {}, null, 2))}</pre>
-                </div>
-
-                <div class="hitl-actions-row">
-                    <button class="btn-hitl-deny" id="btn-hitl-deny-top">✗ Deny & Halt</button>
-                    <button class="btn-hitl-approve" id="btn-hitl-approve-top">✓ Approve & Execute</button>
-                </div>
-            `;
+            topApprovalCard.innerHTML = renderApprovalCardHtml(approvalData, '-top');
+            
             const approveBtn = topApprovalCard.querySelector('#btn-hitl-approve-top');
             const denyBtn = topApprovalCard.querySelector('#btn-hitl-deny-top');
             if (approveBtn && callbacks.onApprove) {
@@ -629,27 +611,7 @@ function renderSubgoalCard(sg, idx, state, callbacks) {
         const approvalPanel = document.createElement('div');
         approvalPanel.className = 'hitl-inline-approval-panel';
         const approvalData = state.pendingApproval;
-        
-        approvalPanel.innerHTML = `
-            <div class="hitl-panel-header">
-                <span style="font-size:18px;">⚠️</span>
-                <div>
-                    <strong style="font-size:13px; color:var(--color-ink);">HUMAN APPROVAL REQUIRED</strong>
-                    <div style="font-size:11px; color:var(--color-muted);">This operation modifies database records or cancels items.</div>
-                </div>
-                <span class="badge-risk ${approvalData.risk?.toLowerCase() || 'high'}">${escapeHtml(approvalData.risk || 'HIGH')} RISK</span>
-            </div>
-            
-            <div class="hitl-preview-box">
-                <div style="font-size:12px; font-weight:600; margin-bottom:4px; color:var(--color-ink);">Operation: <code>${escapeHtml(approvalData.tool || 'write_operation')}</code></div>
-                <pre class="hitl-args-preview">${escapeHtml(JSON.stringify(approvalData.preview || approvalData.args || {}, null, 2))}</pre>
-            </div>
-
-            <div class="hitl-actions-row">
-                <button class="btn-hitl-deny" id="btn-hitl-deny">✗ Deny & Halt</button>
-                <button class="btn-hitl-approve" id="btn-hitl-approve">✓ Approve & Execute</button>
-            </div>
-        `;
+        approvalPanel.innerHTML = renderApprovalCardHtml(approvalData, '');
 
         const approveBtn = approvalPanel.querySelector('#btn-hitl-approve');
         const denyBtn = approvalPanel.querySelector('#btn-hitl-deny');
@@ -800,6 +762,69 @@ function summarizePreview(obs) {
     if (Array.isArray(obs)) return `${obs.length} records returned`;
     if (typeof obs === 'object') return `${Object.keys(obs).length} fields returned`;
     return String(obs);
+}
+
+function renderApprovalCardHtml(approvalData, idSuffix = '') {
+    if (!approvalData) return '';
+    const risk = approvalData.risk || 'HIGH';
+    const title = approvalData.title || (approvalData.tool ? `Authorize ${approvalData.tool}` : 'Human Authorization Required');
+    const summary = approvalData.summary || approvalData.reason || 'This operation modifies database records and requires authorization.';
+    const actionType = approvalData.action_type || 'MUTATION';
+    const details = approvalData.details || {};
+    const hasDetails = typeof details === 'object' && Object.keys(details).length > 0;
+    const previewData = approvalData.preview || approvalData.args || {};
+    const sqlQuery = previewData.sql || previewData.query;
+
+    let detailsHtml = '';
+    if (hasDetails) {
+        detailsHtml = `
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:6px; margin:8px 0;">
+                ${Object.entries(details).map(([k, v]) => `
+                    <div style="background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:4px; padding:5px 8px; font-size:11px;">
+                        <span style="color:#94a3b8; font-weight:700; text-transform:uppercase; font-size:9px; display:block; margin-bottom:2px;">${escapeHtml(k)}</span>
+                        <span style="color:#f8fafc; font-weight:600; word-break:break-word;">${escapeHtml(String(v))}</span>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+    } else if (sqlQuery) {
+        detailsHtml = `
+            <div style="margin:8px 0; background:rgba(0,0,0,0.35); border:1px solid rgba(56,189,248,0.25); border-radius:4px; padding:6px 8px;">
+                <div style="font-size:10px; font-weight:700; color:#38bdf8; text-transform:uppercase; margin-bottom:2px;">Target SQL Query</div>
+                <code style="font-size:11px; font-family:var(--font-mono); color:#e2e8f0; word-break:break-all;">${escapeHtml(sqlQuery)}</code>
+            </div>
+        `;
+    }
+
+    return `
+        <div class="hitl-panel-header">
+            <div style="display:flex; align-items:center; gap:8px;">
+                <span style="font-size:20px; line-height:1;">⚠️</span>
+                <div>
+                    <div style="display:flex; align-items:center; gap:6px;">
+                        <strong style="font-size:13px; color:#f8fafc; font-weight:700;">${escapeHtml(title)}</strong>
+                        <span style="background:rgba(245,158,11,0.2); color:#fbbf24; border:1px solid rgba(245,158,11,0.4); font-size:9px; font-weight:800; padding:1px 5px; border-radius:3px;">${escapeHtml(actionType)}</span>
+                    </div>
+                    <div style="font-size:12px; color:#cbd5e1; margin-top:2px; line-height:1.3;">${escapeHtml(summary)}</div>
+                </div>
+            </div>
+            <span class="badge-risk ${risk.toLowerCase()}">${escapeHtml(risk)} RISK</span>
+        </div>
+        
+        ${detailsHtml}
+
+        <details style="margin:6px 0 10px 0; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.06); border-radius:4px; padding:4px 8px;">
+            <summary style="font-size:10px; color:#94a3b8; font-weight:600; cursor:pointer; user-select:none;">
+                🔍 View Technical Parameters & Payload (<code>${escapeHtml(approvalData.tool || 'operation')}</code>)
+            </summary>
+            <pre class="hitl-args-preview" style="margin-top:6px; max-height:120px;">${escapeHtml(JSON.stringify(previewData, null, 2))}</pre>
+        </details>
+
+        <div class="hitl-actions-row">
+            <button class="btn-hitl-deny" id="btn-hitl-deny${idSuffix}">✗ Deny & Halt</button>
+            <button class="btn-hitl-approve" id="btn-hitl-approve${idSuffix}">✓ Authorize & Execute</button>
+        </div>
+    `;
 }
 
 function escapeHtml(str) {

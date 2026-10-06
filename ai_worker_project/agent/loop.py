@@ -107,6 +107,136 @@ Available Tools:
 """
 
 
+def _build_approval_context(tool_name: str, tool_args: dict, blocked_reason: str = None) -> dict:
+    name_lower = tool_name.lower()
+    q = str(tool_args.get("query", ""))
+    q_upper = q.upper()
+    
+    if "employee" in name_lower or "create_employee" in name_lower:
+        emp_name = tool_args.get("name") or tool_args.get("employee_name", "New Employee")
+        role = tool_args.get("role") or tool_args.get("job_title", "Staff")
+        dept = tool_args.get("department", "General")
+        return {
+            "title": f"Onboard Employee: {emp_name}",
+            "action_type": "CREATE",
+            "entity": "Employee",
+            "summary": f"The agent is creating an employee profile for {emp_name} as {role} in {dept}.",
+            "details": {
+                "Full Name": emp_name,
+                "Role / Title": role,
+                "Department": dept,
+                "Email": tool_args.get("email", "N/A"),
+                "Phone": tool_args.get("phone", "N/A"),
+                "Manager": tool_args.get("manager", "Admin")
+            }
+        }
+    elif "expense" in name_lower:
+        exp_id = tool_args.get("id") or tool_args.get("expense_id", "N/A")
+        emp = tool_args.get("employee", "")
+        amt = tool_args.get("amount", "")
+        status = tool_args.get("status", "approved")
+        cat = tool_args.get("category", "")
+        return {
+            "title": f"Update Expense: {exp_id}",
+            "action_type": "UPDATE",
+            "entity": "Expense Claim",
+            "summary": f"The agent is updating expense {exp_id} ({f'for {emp}' if emp else ''}) to status '{status}'.",
+            "details": {
+                "Expense ID": exp_id,
+                "Employee": emp or "N/A",
+                "Category": cat or "N/A",
+                "Amount": amt or "N/A",
+                "New Status": status
+            }
+        }
+    elif "task" in name_lower:
+        title = tool_args.get("title", "New Task")
+        assignee = tool_args.get("assignedTo") or tool_args.get("assignee", "Staff")
+        prio = tool_args.get("priority", "medium")
+        due = tool_args.get("dueDate", "N/A")
+        return {
+            "title": f"Assign Task: {title}",
+            "action_type": "CREATE",
+            "entity": "Task",
+            "summary": f"The agent is assigning task '{title}' to {assignee} ({prio} priority, due {due}).",
+            "details": {
+                "Task Title": title,
+                "Assignee": assignee,
+                "Priority": prio,
+                "Due Date": due
+            }
+        }
+    elif "leave" in name_lower:
+        emp = tool_args.get("employee", "Employee")
+        ltype = tool_args.get("type", "PTO")
+        status = tool_args.get("status", "approved")
+        dates = tool_args.get("dates", "N/A")
+        return {
+            "title": f"Process Leave: {emp}",
+            "action_type": "UPDATE",
+            "entity": "Leave Request",
+            "summary": f"The agent is updating {ltype} leave for {emp} ({dates}) to status '{status}'.",
+            "details": {
+                "Employee": emp,
+                "Leave Type": ltype,
+                "Dates": dates,
+                "Status": status
+            }
+        }
+    elif "document" in name_lower:
+        doc_name = tool_args.get("name") or tool_args.get("title", "New Document")
+        dtype = tool_args.get("type", "Policy")
+        return {
+            "title": f"Save Document: {doc_name}",
+            "action_type": "CREATE",
+            "entity": "Document",
+            "summary": f"The agent is saving document '{doc_name}' ({dtype}).",
+            "details": {
+                "Title": doc_name,
+                "Type": dtype,
+                "Related To": tool_args.get("relatedTo", "Company")
+            }
+        }
+    elif "email" in name_lower:
+        to = tool_args.get("to") or tool_args.get("recipient", "Employees")
+        subj = tool_args.get("subject", "Announcement")
+        return {
+            "title": f"Send Email: {subj}",
+            "action_type": "NOTIFICATION",
+            "entity": "Email",
+            "summary": f"The agent is sending email '{subj}' to {to}.",
+            "details": {
+                "To": to,
+                "Subject": subj
+            }
+        }
+    elif tool_name == "sql_query":
+        table = "Database"
+        for t in ["employees", "expenses", "tasks", "leaves", "documents", "emails", "benefits"]:
+            if t.upper() in q_upper:
+                table = t
+                break
+        action_type = "UPDATE" if "UPDATE" in q_upper else ("INSERT" if "INSERT" in q_upper else ("DELETE" if "DELETE" in q_upper else "MUTATION"))
+        return {
+            "title": f"SQL {action_type} on '{table}'",
+            "action_type": action_type,
+            "entity": table,
+            "summary": f"The agent wants to execute a data modification on the '{table}' table.",
+            "details": {
+                "Target Table": table,
+                "SQL Query": q
+            }
+        }
+    else:
+        return {
+            "title": f"Authorize {tool_name}",
+            "action_type": "EXECUTE",
+            "entity": tool_name,
+            "summary": blocked_reason or f"The agent wants to execute {tool_name} which requires human approval.",
+            "details": tool_args
+        }
+
+
 class RunState:
     def __init__(self, goal: str):
         self.goal = goal
@@ -475,6 +605,9 @@ class Agent:
                                 preview_data = {"sql": tool_args.get("query", "")}
                             elif not preview_data:
                                 preview_data = tool_args
+                            
+                            # Build human-readable context
+                            ctx = _build_approval_context(tool_name, tool_args, blocked_reason)
                                 
                             await _emit({
                                 "type": "approval_required",
@@ -482,8 +615,13 @@ class Agent:
                                     "tool": tool_name,
                                     "args": tool_args,
                                     "preview": preview_data,
+                                    "title": ctx.get("title", "Human Authorization Required"),
+                                    "summary": ctx.get("summary", "This operation mutates database records and requires authorization."),
+                                    "action_type": ctx.get("action_type", "MUTATION"),
+                                    "entity": ctx.get("entity", "Record"),
+                                    "details": ctx.get("details", {}),
                                     "risk": "CRITICAL" if any(k in str(tool_args).upper() for k in ["DROP", "ALTER", "DELETE"]) else "HIGH",
-                                    "reason": blocked_reason or "This operation mutates database records or cancels items and requires authorization."
+                                    "reason": blocked_reason or ctx.get("summary") or "This operation mutates database records or cancels items and requires authorization."
                                 }
                             })
                             if approval_queue:

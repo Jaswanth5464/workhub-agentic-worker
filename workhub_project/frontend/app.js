@@ -1,20 +1,39 @@
 // WorkHub HR App - Frontend Logic
 
-window.store = {
+window.store = (typeof mockData !== 'undefined' && mockData) ? {
+    employees: mockData.employees || [],
+    expenses: mockData.expenses || [],
+    leaves: mockData.leaves || [],
+    benefits: mockData.benefits || [],
+    tasks: mockData.tasks || [],
+    emails: mockData.emails || [],
+    documents: mockData.documents || []
+} : {
     employees: [], expenses: [], leaves: [], benefits: [], tasks: [], emails: [], documents: []
 };
+
 const API_BASE = 'http://localhost:8000/api/hr';
 
 async function fetchStore() {
     const endpoints = ['employees', 'expenses', 'leaves', 'benefits', 'tasks', 'emails', 'documents'];
+    let apiSuccess = false;
     for (const ep of endpoints) {
         try {
-            const res = await fetch(`${API_BASE}/${ep}/`);
+            const res = await fetch(`${API_BASE}/${ep}/`, { cache: 'no-store' });
             if (res.ok) {
                 window.store[ep] = await res.json();
+                apiSuccess = true;
             }
         } catch (e) {
-            console.error(`Error fetching ${ep}`, e);
+            // Silently handle offline API
+        }
+    }
+    // If API endpoint was unreachable, sync from mockData if available
+    if (!apiSuccess && typeof mockData !== 'undefined' && mockData) {
+        for (const ep of endpoints) {
+            if (mockData[ep]) {
+                window.store[ep] = mockData[ep];
+            }
         }
     }
 }

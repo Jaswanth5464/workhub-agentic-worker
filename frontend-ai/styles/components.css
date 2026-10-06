@@ -739,24 +739,25 @@
 
 /* Human In The Loop Inline Approval Panel */
 .hitl-inline-approval-panel {
-    background: #fffbeb;
-    border: 1.5px solid #fde68a;
+    background: rgba(245, 158, 11, 0.07);
+    border: 1.5px solid rgba(245, 158, 11, 0.4);
     border-radius: var(--radius-sm);
-    padding: 10px 12px;
-    margin: 6px 0;
-    animation: flashBorder 2s infinite;
+    padding: 12px 14px;
+    margin: 8px 0;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 15px rgba(245, 158, 11, 0.12);
+    animation: flashBorder 2.5s infinite ease-in-out;
 }
 
 @keyframes flashBorder {
-    0%, 100% { border-color: #fde68a; }
-    50% { border-color: #f59e0b; }
+    0%, 100% { border-color: rgba(245, 158, 11, 0.35); box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4), 0 0 12px rgba(245, 158, 11, 0.1); }
+    50% { border-color: rgba(245, 158, 11, 0.7); box-shadow: 0 4px 25px rgba(0, 0, 0, 0.5), 0 0 20px rgba(245, 158, 11, 0.25); }
 }
 
 .hitl-panel-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    margin-bottom: 8px;
+    align-items: flex-start;
+    margin-bottom: 6px;
 }
 
 .badge-risk {
@@ -767,8 +768,8 @@
     text-transform: uppercase;
 }
 
-.badge-risk.high { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
-.badge-risk.critical { background: rgba(220, 38, 38, 0.25); color: #fca5a5; border: 1px solid rgba(220, 38, 38, 0.5); }
+.badge-risk.high { background: rgba(239, 68, 68, 0.2); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.4); }
+.badge-risk.critical { background: rgba(220, 38, 38, 0.3); color: #fecaca; border: 1px solid rgba(220, 38, 38, 0.6); }
 
 .hitl-preview-box {
     background: #070c14;
@@ -783,7 +784,7 @@
     font-size: 11px;
     font-family: var(--font-mono);
     color: #cbd5e1;
-    max-height: 80px;
+    max-height: 100px;
     overflow-y: auto;
 }
 
@@ -791,6 +792,7 @@
     display: flex;
     justify-content: flex-end;
     gap: 8px;
+    margin-top: 6px;
 }
 
 .btn-hitl-deny {
