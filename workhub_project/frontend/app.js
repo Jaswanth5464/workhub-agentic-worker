@@ -143,23 +143,23 @@ function getViewStateKey(viewName) {
             const emp = store.employees.find(e => String(e.id).toUpperCase() === String(window.currentEmpId).toUpperCase());
             return `emp-prof-${window.currentEmpId}-${JSON.stringify(emp || {})}`;
         case 'expenses':
-            return `exp-${store.expenses.length}-${JSON.stringify(store.expenses.map(e => [e.id, e.status]))}-${window.expenseFilter || 'all'}`;
+            return `exp-${store.expenses.length}-${JSON.stringify(store.expenses.map(e => [e.id, e.status]))}-${window.expenseFilter || 'all'}-${window.currentExpenseSearchTerm || ''}`;
         case 'leaves':
-            return `lv-${store.leaves.length}-${JSON.stringify(store.leaves.map(l => [l.id, l.status]))}`;
+            return `lv-${store.leaves.length}-${JSON.stringify(store.leaves.map(l => [l.id, l.status]))}-${window.currentLeaveSearchTerm || ''}`;
         case 'benefits':
             return `ben-${store.benefits.length}-${JSON.stringify(store.benefits.map(b => [b.id, b.status, b.coverage]))}`;
         case 'tasks':
-            return `tsk-${store.tasks.length}-${JSON.stringify(store.tasks.map(t => [t.id, t.status, t.priority]))}`;
+            return `tsk-${store.tasks.length}-${JSON.stringify(store.tasks.map(t => [t.id, t.status, t.priority]))}-${window.currentTaskSearchTerm || ''}`;
         case 'approvals':
             const pLeaves = store.leaves.filter(l => l.status === 'pending').map(l => l.id);
             const pExps = store.expenses.filter(e => e.status === 'pending').map(e => e.id);
             return `appr-${pLeaves.join(',')}-${pExps.join(',')}`;
         case 'emails':
-            return `eml-${store.emails.length}-${store.emails.filter(m => !m.read).map(m => m.id).join(',')}`;
+            return `eml-${store.emails.length}-${store.emails.filter(m => !m.read).map(m => m.id).join(',')}-${window.currentEmailSearchTerm || ''}`;
         case 'documents':
-            return `doc-${store.documents.length}-${store.documents.map(d => d.id).join(',')}`;
+            return `doc-${store.documents.length}-${store.documents.map(d => d.id).join(',')}-${window.currentDocSearchTerm || ''}`;
         case 'departments':
-            return `dept-${store.employees.length}`;
+            return `dept-${store.employees.length}-${window.currentDeptSearchTerm || ''}`;
         case 'reports':
             return `rep-${store.employees.length}-${store.expenses.length}-${store.tasks.length}`;
         case 'settings':
@@ -530,7 +530,17 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function renderExpenses() {
         const filterVal = window.expenseFilter || 'all';
-        let filteredExpenses = store.expenses.filter(e => filterVal === 'all' || e.status === filterVal);
+        const search = (window.currentExpenseSearchTerm || '').toLowerCase().trim();
+        let filteredExpenses = store.expenses.filter(e => {
+            const matchesStatus = (filterVal === 'all' || e.status === filterVal);
+            const matchesSearch = !search || 
+                (e.id && e.id.toLowerCase().includes(search)) ||
+                (e.employee && e.employee.toLowerCase().includes(search)) ||
+                (e.category && e.category.toLowerCase().includes(search)) ||
+                (e.amount && String(e.amount).toLowerCase().includes(search)) ||
+                (e.date && e.date.toLowerCase().includes(search));
+            return matchesStatus && matchesSearch;
+        });
 
         let rows = filteredExpenses.map(exp => {
             const expName = exp.name || exp.employee || exp.id;
@@ -553,8 +563,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         return `
             <div class="card-header">
-                <h2>Expense Management</h2>
-                <div style="display: flex; gap: 1rem;">
+                <h2>Expense Management (${filteredExpenses.length} Total)</h2>
+                <div style="display: flex; gap: 0.75rem; align-items: center;">
+                    <input type="text" id="exp-search" data-testid="exp-search-input" value="${escapeHtml(window.currentExpenseSearchTerm || '')}" placeholder="Search expenses by employee, category, ID..." aria-label="Search expenses by employee, category, or ID" style="padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px; min-width: 250px;">
                     <button class="btn-primary" id="btn-add-expense" data-testid="btn-add-expense" aria-label="Add New Expense"><i class="fa-solid fa-plus" aria-hidden="true"></i> Add Expense</button>
                     <button class="btn-secondary" id="btn-filter-expenses" data-testid="btn-filter-expenses" aria-label="Filter Expenses by Status"><i class="fa-solid fa-filter" aria-hidden="true"></i> Filter (${filterVal.toUpperCase()})</button>
                 </div>
@@ -572,14 +583,24 @@ document.addEventListener('DOMContentLoaded', async () => {
                     </tr>
                 </thead>
                 <tbody>
-                    ${rows.length > 0 ? rows : '<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">No expenses found for current filter.</td></tr>'}
+                    ${rows.length > 0 ? rows : '<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">No expenses match the search filter.</td></tr>'}
                 </tbody>
             </table>
         `;
     }
 
     function renderLeaves() {
-        let rows = store.leaves.map(lv => {
+        const search = (window.currentLeaveSearchTerm || '').toLowerCase().trim();
+        let filteredLeaves = store.leaves.filter(lv => {
+            return !search ||
+                (lv.id && lv.id.toLowerCase().includes(search)) ||
+                (lv.employee && lv.employee.toLowerCase().includes(search)) ||
+                (lv.type && lv.type.toLowerCase().includes(search)) ||
+                (lv.dates && lv.dates.toLowerCase().includes(search)) ||
+                (lv.status && lv.status.toLowerCase().includes(search));
+        });
+
+        let rows = filteredLeaves.map(lv => {
             const lvName = lv.name || lv.employee || lv.id;
             return `
             <tr data-testid="row-leave-${escapeHtml(lv.id)}" aria-label="${escapeHtml(lvName)}">
@@ -600,8 +621,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         return `
             <div class="card-header">
-                <h2>Leave Requests</h2>
-                <div style="display: flex; gap: 1rem;">
+                <h2>Leave Requests (${filteredLeaves.length} Total)</h2>
+                <div style="display: flex; gap: 0.75rem; align-items: center;">
+                    <input type="text" id="leave-search" data-testid="leave-search-input" value="${escapeHtml(window.currentLeaveSearchTerm || '')}" placeholder="Search leaves by employee, type, ID..." aria-label="Search leaves by employee, type, or ID" style="padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px; min-width: 250px;">
                     <button class="btn-primary" id="btn-add-leave" data-testid="btn-add-leave" aria-label="Request Leave"><i class="fa-solid fa-plus" aria-hidden="true"></i> Request Leave</button>
                     <button class="btn-secondary" id="btn-view-calendar" data-testid="btn-view-calendar" aria-label="View Leave Calendar"><i class="fa-solid fa-calendar" aria-hidden="true"></i> View Calendar</button>
                 </div>
@@ -618,7 +640,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                     </tr>
                 </thead>
                 <tbody>
-                    ${rows.length > 0 ? rows : '<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">No leave requests found in SQLite database.</td></tr>'}
+                    ${rows.length > 0 ? rows : '<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">No leave requests match the search filter.</td></tr>'}
                 </tbody>
             </table>
         `;
@@ -662,7 +684,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function renderTasks() {
-        let rows = store.tasks.map(tsk => {
+        const search = (window.currentTaskSearchTerm || '').toLowerCase().trim();
+        let filteredTasks = store.tasks.filter(tsk => {
+            return !search ||
+                (tsk.id && tsk.id.toLowerCase().includes(search)) ||
+                (tsk.title && tsk.title.toLowerCase().includes(search)) ||
+                (tsk.assignedTo && tsk.assignedTo.toLowerCase().includes(search)) ||
+                (tsk.priority && tsk.priority.toLowerCase().includes(search)) ||
+                (tsk.status && tsk.status.toLowerCase().includes(search));
+        });
+
+        let rows = filteredTasks.map(tsk => {
             const taskName = tsk.name || tsk.title || tsk.id;
             return `
             <tr data-testid="row-task-${escapeHtml(tsk.id)}" aria-label="${escapeHtml(taskName)}">
@@ -682,7 +714,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         return `
             <div class="card-header">
                 <h2>HR Tasks <span class="badge ${openTasks > 0 ? 'danger' : 'primary'}" style="margin-left: 0.5rem; font-size: 0.8rem;">${openTasks} Open</span></h2>
-                <button class="btn-primary" id="btn-new-task" data-testid="btn-new-task" aria-label="Create New HR Task"><i class="fa-solid fa-plus" aria-hidden="true"></i> New Task</button>
+                <div style="display: flex; gap: 0.75rem; align-items: center;">
+                    <input type="text" id="task-search" data-testid="task-search-input" value="${escapeHtml(window.currentTaskSearchTerm || '')}" placeholder="Search tasks by title, assignee, ID..." aria-label="Search tasks by title, assignee, or ID" style="padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px; min-width: 250px;">
+                    <button class="btn-primary" id="btn-new-task" data-testid="btn-new-task" aria-label="Create New HR Task"><i class="fa-solid fa-plus" aria-hidden="true"></i> New Task</button>
+                </div>
             </div>
             <table class="data-table" aria-label="HR Tasks Table">
                 <thead>
@@ -697,14 +732,23 @@ document.addEventListener('DOMContentLoaded', async () => {
                     </tr>
                 </thead>
                 <tbody>
-                    ${rows.length > 0 ? rows : '<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">No tasks found in SQLite database.</td></tr>'}
+                    ${rows.length > 0 ? rows : '<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">No tasks match the search filter.</td></tr>'}
                 </tbody>
             </table>
         `;
     }
 
     function renderEmails() {
-        let rows = store.emails.map(msg => {
+        const search = (window.currentEmailSearchTerm || '').toLowerCase().trim();
+        let filteredEmails = store.emails.filter(msg => {
+            return !search ||
+                (msg.from && msg.from.toLowerCase().includes(search)) ||
+                (msg.from_email && msg.from_email.toLowerCase().includes(search)) ||
+                (msg.subject && msg.subject.toLowerCase().includes(search)) ||
+                (msg.body && msg.body.toLowerCase().includes(search));
+        });
+
+        let rows = filteredEmails.map(msg => {
             const emailName = msg.name || msg.from || msg.from_email || msg.subject;
             return `
             <div class="email-row" data-id="${escapeHtml(msg.id)}" data-testid="row-email-${escapeHtml(msg.id)}" aria-label="${escapeHtml(emailName)}" style="padding: 1rem; border-bottom: 1px solid var(--border); display: flex; gap: 1rem; cursor: pointer; background: ${msg.read ? 'transparent' : '#f0f4f8'};">
@@ -721,13 +765,14 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         return `
             <div class="card-header">
-                <h2>Admin Inbox</h2>
-                <div style="display: flex; gap: 1rem;">
+                <h2>Admin Inbox (${filteredEmails.length} Messages)</h2>
+                <div style="display: flex; gap: 0.75rem; align-items: center;">
+                    <input type="text" id="email-search" data-testid="email-search-input" value="${escapeHtml(window.currentEmailSearchTerm || '')}" placeholder="Search emails by sender, subject, body..." aria-label="Search emails by sender, subject, or body" style="padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px; min-width: 250px;">
                     <button class="btn-primary" id="btn-compose-email" data-testid="btn-compose-email" aria-label="Compose New Email"><i class="fa-solid fa-pen" aria-hidden="true"></i> Compose</button>
                 </div>
             </div>
             <div style="background: var(--card-bg); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-top: 1rem;" aria-label="Admin Inbox List">
-                ${rows.length > 0 ? rows : '<div style="padding: 2rem; text-align: center; color: var(--text-muted);">Inbox is empty.</div>'}
+                ${rows.length > 0 ? rows : '<div style="padding: 2rem; text-align: center; color: var(--text-muted);">No emails match the search filter.</div>'}
             </div>
             <div id="email-reader-area" style="margin-top: 2rem; display: none; background: var(--card-bg); padding: 1.5rem; border: 1px solid var(--border); border-radius: var(--radius);" aria-label="Email Reader">
                 <div style="display: flex; justify-content: space-between; margin-bottom: 1.5rem; border-bottom: 1px solid var(--border); padding-bottom: 1rem;">
@@ -754,7 +799,16 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     function renderDocuments() {
-        let rows = store.documents.map(doc => `
+        const search = (window.currentDocSearchTerm || '').toLowerCase().trim();
+        let filteredDocs = store.documents.filter(doc => {
+            return !search ||
+                (doc.id && doc.id.toLowerCase().includes(search)) ||
+                (doc.name && doc.name.toLowerCase().includes(search)) ||
+                (doc.type && doc.type.toLowerCase().includes(search)) ||
+                (doc.relatedTo && doc.relatedTo.toLowerCase().includes(search));
+        });
+
+        let rows = filteredDocs.map(doc => `
             <tr data-testid="row-doc-${escapeHtml(doc.id)}" aria-label="${escapeHtml(doc.name)}">
                 <td><strong>${escapeHtml(doc.id)}</strong></td>
                 <td>${escapeHtml(doc.name)}</td>
@@ -766,8 +820,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         return `
             <div class="card-header">
-                <h2>Document Center</h2>
-                <button class="btn-primary" id="btn-upload-doc" data-testid="btn-upload-doc" aria-label="Upload or Create Document"><i class="fa-solid fa-upload" aria-hidden="true"></i> Upload / Create Document</button>
+                <h2>Document Center (${filteredDocs.length} Total)</h2>
+                <div style="display: flex; gap: 0.75rem; align-items: center;">
+                    <input type="text" id="doc-search" data-testid="doc-search-input" value="${escapeHtml(window.currentDocSearchTerm || '')}" placeholder="Search documents by name, type, related to..." aria-label="Search documents by name, type, or related to" style="padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px; min-width: 250px;">
+                    <button class="btn-primary" id="btn-upload-doc" data-testid="btn-upload-doc" aria-label="Upload or Create Document"><i class="fa-solid fa-upload" aria-hidden="true"></i> Upload / Create Document</button>
+                </div>
             </div>
             <table class="data-table" aria-label="Document Center Table">
                 <thead>
@@ -780,14 +837,17 @@ document.addEventListener('DOMContentLoaded', async () => {
                     </tr>
                 </thead>
                 <tbody>
-                    ${rows.length > 0 ? rows : '<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 2rem;">No documents found in SQLite database.</td></tr>'}
+                    ${rows.length > 0 ? rows : '<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 2rem;">No documents match the search filter.</td></tr>'}
                 </tbody>
             </table>
         `;
     }
 
     function renderDepartments() {
-        const depts = ["Engineering", "HR", "Finance", "Marketing", "Product", "Operations", "Sales", "Customer Support"];
+        const search = (window.currentDeptSearchTerm || '').toLowerCase().trim();
+        const allDepts = ["Engineering", "HR", "Finance", "Marketing", "Product", "Operations", "Sales", "Customer Support"];
+        const depts = allDepts.filter(d => !search || d.toLowerCase().includes(search));
+        
         const cards = depts.map(d => {
             const empsInDept = store.employees.filter(e => (e.department || '').toLowerCase() === d.toLowerCase());
             const activeCount = empsInDept.filter(e => e.status === 'active').length;
@@ -816,10 +876,13 @@ document.addEventListener('DOMContentLoaded', async () => {
         return `
             <div class="card-header">
                 <h2>Company Departments</h2>
-                <span class="badge primary">${depts.length} Total Departments</span>
+                <div style="display: flex; gap: 0.75rem; align-items: center;">
+                    <input type="text" id="dept-search" data-testid="dept-search-input" value="${escapeHtml(window.currentDeptSearchTerm || '')}" placeholder="Search departments..." aria-label="Search departments" style="padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px; min-width: 250px;">
+                    <span class="badge primary">${depts.length} Total Departments</span>
+                </div>
             </div>
             <div class="dashboard-grid" style="margin-top: 1.5rem; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));" aria-label="Company Departments Grid">
-                ${cards}
+                ${cards.length > 0 ? cards : '<div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 2rem;">No departments match the search filter.</div>'}
             </div>
         `;
     }
@@ -1198,6 +1261,58 @@ document.addEventListener('DOMContentLoaded', async () => {
                 });
             });
 
+            const expSearchInput = document.getElementById('exp-search');
+            if (expSearchInput) {
+                expSearchInput.addEventListener('input', (e) => {
+                    window.currentExpenseSearchTerm = e.target.value.toLowerCase().trim();
+                    const tbody = document.querySelector('.data-table tbody');
+                    if (tbody) {
+                        const filterVal = window.expenseFilter || 'all';
+                        const search = window.currentExpenseSearchTerm;
+                        const filtered = store.expenses.filter(exp => {
+                            const matchesStatus = (filterVal === 'all' || exp.status === filterVal);
+                            const matchesSearch = !search ||
+                                (exp.id && exp.id.toLowerCase().includes(search)) ||
+                                (exp.employee && exp.employee.toLowerCase().includes(search)) ||
+                                (exp.category && exp.category.toLowerCase().includes(search)) ||
+                                (exp.amount && String(exp.amount).toLowerCase().includes(search)) ||
+                                (exp.date && exp.date.toLowerCase().includes(search));
+                            return matchesStatus && matchesSearch;
+                        });
+
+                        if (filtered.length > 0) {
+                            tbody.innerHTML = filtered.map(exp => {
+                                const expName = exp.name || exp.employee || exp.id;
+                                return `
+                                <tr data-testid="row-exp-${escapeHtml(exp.id)}" aria-label="${escapeHtml(expName)}">
+                                    <td><strong>${escapeHtml(exp.id)}</strong></td>
+                                    <td>${escapeHtml(exp.employee)}</td>
+                                    <td>${escapeHtml(exp.category)}</td>
+                                    <td><strong>${escapeHtml(exp.amount)}</strong></td>
+                                    <td>${escapeHtml(exp.date)}</td>
+                                    <td><span class="status-tag ${exp.status}" id="status-${escapeHtml(exp.id)}">${escapeHtml((exp.status || '').toUpperCase())}</span></td>
+                                    <td>
+                                        ${exp.status === 'pending' ? 
+                                            `<button class="btn-primary btn-sm btn-review-expense" id="review-${escapeHtml(exp.id)}" data-id="${escapeHtml(exp.id)}" data-testid="btn-review-exp-${escapeHtml(exp.id)}" aria-label="${escapeHtml(expName)}" style="padding: 0.25rem 0.75rem; font-size: 0.8rem;">Review</button>` : 
+                                            `<button class="btn-secondary btn-sm" disabled data-testid="btn-processed-exp-${escapeHtml(exp.id)}" aria-label="${escapeHtml(expName)}" style="padding: 0.25rem 0.75rem; font-size: 0.8rem;">Processed</button>`
+                                        }
+                                    </td>
+                                </tr>
+                            `;}).join('');
+
+                            tbody.querySelectorAll('.btn-review-expense').forEach(btn => {
+                                btn.addEventListener('click', (ev) => {
+                                    const id = ev.currentTarget.getAttribute('data-id');
+                                    openExpenseApproval(id);
+                                });
+                            });
+                        } else {
+                            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">No expenses match the search filter.</td></tr>';
+                        }
+                    }
+                });
+            }
+
             document.getElementById('btn-filter-expenses')?.addEventListener('click', () => {
                 openGenericModal("Filter Expenses", `
                     <div style="margin-bottom: 1rem;">
@@ -1309,6 +1424,73 @@ document.addEventListener('DOMContentLoaded', async () => {
                     switchView('leaves');
                 });
             });
+
+            const leaveSearchInput = document.getElementById('leave-search');
+            if (leaveSearchInput) {
+                leaveSearchInput.addEventListener('input', (e) => {
+                    window.currentLeaveSearchTerm = e.target.value.toLowerCase().trim();
+                    const tbody = document.querySelector('.data-table tbody');
+                    if (tbody) {
+                        const search = window.currentLeaveSearchTerm;
+                        const filtered = store.leaves.filter(lv => {
+                            return !search ||
+                                (lv.id && lv.id.toLowerCase().includes(search)) ||
+                                (lv.employee && lv.employee.toLowerCase().includes(search)) ||
+                                (lv.type && lv.type.toLowerCase().includes(search)) ||
+                                (lv.dates && lv.dates.toLowerCase().includes(search)) ||
+                                (lv.status && lv.status.toLowerCase().includes(search));
+                        });
+
+                        if (filtered.length > 0) {
+                            tbody.innerHTML = filtered.map(lv => {
+                                const lvName = lv.name || lv.employee || lv.id;
+                                return `
+                                <tr data-testid="row-leave-${escapeHtml(lv.id)}" aria-label="${escapeHtml(lvName)}">
+                                    <td><strong>${escapeHtml(lv.id)}</strong></td>
+                                    <td>${escapeHtml(lv.employee)}</td>
+                                    <td>${escapeHtml(lv.type)}</td>
+                                    <td>${escapeHtml(lv.dates)}</td>
+                                    <td><span class="status-tag ${lv.status}">${escapeHtml((lv.status || '').toUpperCase())}</span></td>
+                                    <td>
+                                        ${lv.status === 'pending' ? 
+                                            `<button class="btn-primary btn-sm btn-action-leave" data-id="${escapeHtml(lv.id)}" data-action="approve" data-testid="btn-approve-leave-${escapeHtml(lv.id)}" aria-label="${escapeHtml(lvName)}" style="padding: 0.25rem 0.75rem; font-size: 0.8rem; margin-right: 0.25rem;">Approve</button>
+                                             <button class="btn-secondary btn-sm btn-action-leave" data-id="${escapeHtml(lv.id)}" data-action="reject" data-testid="btn-reject-leave-${escapeHtml(lv.id)}" aria-label="${escapeHtml(lvName)}" style="padding: 0.25rem 0.75rem; font-size: 0.8rem;">Reject</button>` : 
+                                            `<button class="btn-secondary btn-sm" disabled data-testid="btn-processed-leave-${escapeHtml(lv.id)}" aria-label="${escapeHtml(lvName)}" style="padding: 0.25rem 0.75rem; font-size: 0.8rem;">Processed</button>`
+                                        }
+                                    </td>
+                                </tr>
+                            `;}).join('');
+
+                            tbody.querySelectorAll('.btn-action-leave').forEach(btn => {
+                                btn.addEventListener('click', async (ev) => {
+                                    const id = ev.currentTarget.getAttribute('data-id');
+                                    const action = ev.currentTarget.getAttribute('data-action');
+                                    const newStatus = (action === 'approve') ? 'approved' : 'rejected';
+
+                                    try {
+                                        const res = await fetch(`${API_BASE}/leaves/${id}`, {
+                                            method: 'PATCH',
+                                            headers: { 'Content-Type': 'application/json' },
+                                            body: JSON.stringify({ status: newStatus })
+                                        });
+                                        if (res.ok) {
+                                            showToast(`Leave ${id} successfully ${action}d in SQLite database.`);
+                                        } else {
+                                            showToast(`Error updating leave ${id}.`);
+                                        }
+                                    } catch (err) {
+                                        showToast(`Network error: ${err}`);
+                                    }
+                                    await fetchStore();
+                                    switchView('leaves');
+                                });
+                            });
+                        } else {
+                            tbody.innerHTML = '<tr><td colspan="6" style="text-align: center; color: var(--text-muted); padding: 2rem;">No leave requests match the search filter.</td></tr>';
+                        }
+                    }
+                });
+            }
 
             document.getElementById('btn-add-leave')?.addEventListener('click', () => {
                 openGenericModal("Request Leave", `
@@ -1474,6 +1656,55 @@ document.addEventListener('DOMContentLoaded', async () => {
                 });
             });
 
+            const taskSearchInput = document.getElementById('task-search');
+            if (taskSearchInput) {
+                taskSearchInput.addEventListener('input', (e) => {
+                    window.currentTaskSearchTerm = e.target.value.toLowerCase().trim();
+                    const tbody = document.querySelector('.data-table tbody');
+                    if (tbody) {
+                        const search = window.currentTaskSearchTerm;
+                        const filtered = store.tasks.filter(tsk => {
+                            return !search ||
+                                (tsk.id && tsk.id.toLowerCase().includes(search)) ||
+                                (tsk.title && tsk.title.toLowerCase().includes(search)) ||
+                                (tsk.assignedTo && tsk.assignedTo.toLowerCase().includes(search)) ||
+                                (tsk.priority && tsk.priority.toLowerCase().includes(search)) ||
+                                (tsk.status && tsk.status.toLowerCase().includes(search));
+                        });
+
+                        if (filtered.length > 0) {
+                            tbody.innerHTML = filtered.map(tsk => {
+                                const taskName = tsk.name || tsk.title || tsk.id;
+                                return `
+                                <tr data-testid="row-task-${escapeHtml(tsk.id)}" aria-label="${escapeHtml(taskName)}">
+                                    <td><strong>${escapeHtml(tsk.id)}</strong></td>
+                                    <td>${escapeHtml(tsk.title)}</td>
+                                    <td>${escapeHtml(tsk.assignedTo)}</td>
+                                    <td>${escapeHtml(tsk.dueDate)}</td>
+                                    <td><span class="status-tag pending">${escapeHtml((tsk.priority || '').toUpperCase())}</span></td>
+                                    <td><span class="status-tag ${tsk.status === 'pending' ? 'pending' : (tsk.status === 'completed' ? 'active' : 'approved')}">${escapeHtml((tsk.status || '').replace('_', ' ').toUpperCase())}</span></td>
+                                    <td>
+                                        <button class="btn-secondary btn-sm btn-open-task" data-id="${escapeHtml(tsk.id)}" data-testid="btn-open-task-${escapeHtml(tsk.id)}" aria-label="${escapeHtml(taskName)}" style="padding: 0.25rem 0.75rem; font-size: 0.8rem;">Open Task</button>
+                                    </td>
+                                </tr>
+                            `;}).join('');
+
+                            tbody.querySelectorAll('.btn-open-task').forEach(btn => {
+                                btn.addEventListener('click', (ev) => {
+                                    const id = ev.currentTarget.getAttribute('data-id');
+                                    const tsk = store.tasks.find(t => t.id === id);
+                                    if (tsk) {
+                                        openTaskModal(tsk);
+                                    }
+                                });
+                            });
+                        } else {
+                            tbody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 2rem;">No tasks match the search filter.</td></tr>';
+                        }
+                    }
+                });
+            }
+
             document.getElementById('btn-new-task')?.addEventListener('click', () => {
                 openGenericModal("Create New HR Task", `
                     <div class="form-group">
@@ -1563,6 +1794,68 @@ document.addEventListener('DOMContentLoaded', async () => {
                 });
             });
 
+            const emailSearchInput = document.getElementById('email-search');
+            if (emailSearchInput) {
+                emailSearchInput.addEventListener('input', (e) => {
+                    window.currentEmailSearchTerm = e.target.value.toLowerCase().trim();
+                    const container = document.querySelector('[aria-label="Admin Inbox List"]');
+                    if (container) {
+                        const search = window.currentEmailSearchTerm;
+                        const filtered = store.emails.filter(msg => {
+                            return !search ||
+                                (msg.from && msg.from.toLowerCase().includes(search)) ||
+                                (msg.from_email && msg.from_email.toLowerCase().includes(search)) ||
+                                (msg.subject && msg.subject.toLowerCase().includes(search)) ||
+                                (msg.body && msg.body.toLowerCase().includes(search));
+                        });
+
+                        if (filtered.length > 0) {
+                            container.innerHTML = filtered.map(msg => {
+                                const emailName = msg.name || msg.from || msg.from_email || msg.subject;
+                                return `
+                                <div class="email-row" data-id="${escapeHtml(msg.id)}" data-testid="row-email-${escapeHtml(msg.id)}" aria-label="${escapeHtml(emailName)}" style="padding: 1rem; border-bottom: 1px solid var(--border); display: flex; gap: 1rem; cursor: pointer; background: ${msg.read ? 'transparent' : '#f0f4f8'};">
+                                    <div style="flex: 1;">
+                                        <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+                                            <strong style="font-size: 0.95rem; color: ${msg.read ? 'var(--text-muted)' : 'var(--text-main)'};">${escapeHtml(msg.from || msg.from_email)}</strong>
+                                            <span style="font-size: 0.8rem; color: var(--text-muted);">${escapeHtml(msg.date)}</span>
+                                        </div>
+                                        <div style="font-weight: ${msg.read ? '400' : '600'}; font-size: 0.95rem; margin-bottom: 0.25rem;">${escapeHtml(msg.subject)}</div>
+                                        <div style="font-size: 0.85rem; color: var(--text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(msg.body)}</div>
+                                    </div>
+                                </div>
+                            `;}).join('');
+
+                            container.querySelectorAll('.email-row').forEach(row => {
+                                row.addEventListener('click', async (ev) => {
+                                    const id = ev.currentTarget.getAttribute('data-id');
+                                    const msg = store.emails.find(m => m.id === id);
+                                    if (msg) {
+                                        msg.read = 1;
+                                        try {
+                                            await fetch(`${API_BASE}/emails/${id}`, {
+                                                method: 'PATCH',
+                                                headers: { 'Content-Type': 'application/json' },
+                                                body: JSON.stringify({ read: 1 })
+                                            });
+                                        } catch (err) {}
+
+                                        ev.currentTarget.style.background = 'transparent';
+                                        const readerArea = document.getElementById('email-reader-area');
+                                        document.getElementById('email-reader-subject').innerText = msg.subject;
+                                        document.getElementById('email-reader-from').innerText = `From: ${msg.from || msg.from_email} on ${msg.date}`;
+                                        document.getElementById('email-reader-body').innerText = msg.body;
+                                        readerArea.style.display = 'block';
+                                        updateSidebarBadges();
+                                    }
+                                });
+                            });
+                        } else {
+                            container.innerHTML = '<div style="padding: 2rem; text-align: center; color: var(--text-muted);">No emails match the search filter.</div>';
+                        }
+                    }
+                });
+            }
+
             document.getElementById('btn-reply-email')?.addEventListener('click', () => {
                 document.getElementById('email-reply-editor').style.display = 'block';
             });
@@ -1651,6 +1944,45 @@ document.addEventListener('DOMContentLoaded', async () => {
                     openDocumentReader(id);
                 });
             });
+
+            const docSearchInput = document.getElementById('doc-search');
+            if (docSearchInput) {
+                docSearchInput.addEventListener('input', (e) => {
+                    window.currentDocSearchTerm = e.target.value.toLowerCase().trim();
+                    const tbody = document.querySelector('.data-table tbody');
+                    if (tbody) {
+                        const search = window.currentDocSearchTerm;
+                        const filtered = store.documents.filter(doc => {
+                            return !search ||
+                                (doc.id && doc.id.toLowerCase().includes(search)) ||
+                                (doc.name && doc.name.toLowerCase().includes(search)) ||
+                                (doc.type && doc.type.toLowerCase().includes(search)) ||
+                                (doc.relatedTo && doc.relatedTo.toLowerCase().includes(search));
+                        });
+
+                        if (filtered.length > 0) {
+                            tbody.innerHTML = filtered.map(doc => `
+                                <tr data-testid="row-doc-${escapeHtml(doc.id)}" aria-label="${escapeHtml(doc.name)}">
+                                    <td><strong>${escapeHtml(doc.id)}</strong></td>
+                                    <td>${escapeHtml(doc.name)}</td>
+                                    <td><span class="status-tag active">${escapeHtml(doc.type)}</span></td>
+                                    <td>${escapeHtml(doc.relatedTo || 'General')}</td>
+                                    <td><button class="btn-secondary btn-sm btn-view-doc" data-id="${escapeHtml(doc.id)}" data-testid="btn-view-doc-${escapeHtml(doc.id)}" aria-label="${escapeHtml(doc.name)}" style="padding: 0.25rem 0.75rem; font-size: 0.8rem;">View Document</button></td>
+                                </tr>
+                            `).join('');
+
+                            tbody.querySelectorAll('.btn-view-doc').forEach(btn => {
+                                btn.addEventListener('click', (ev) => {
+                                    const id = ev.currentTarget.getAttribute('data-id');
+                                    openDocumentReader(id);
+                                });
+                            });
+                        } else {
+                            tbody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 2rem;">No documents match the search filter.</td></tr>';
+                        }
+                    }
+                });
+            }
             
             document.getElementById('btn-upload-doc')?.addEventListener('click', () => {
                 openGenericModal("Upload / Create Document", `
@@ -1708,6 +2040,56 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         if (viewName === 'departments') {
+            const deptSearchInput = document.getElementById('dept-search');
+            if (deptSearchInput) {
+                deptSearchInput.addEventListener('input', (e) => {
+                    window.currentDeptSearchTerm = e.target.value.toLowerCase().trim();
+                    const grid = document.querySelector('[aria-label="Company Departments Grid"]');
+                    if (grid) {
+                        const search = window.currentDeptSearchTerm;
+                        const allDepts = ["Engineering", "HR", "Finance", "Marketing", "Product", "Operations", "Sales", "Customer Support"];
+                        const depts = allDepts.filter(d => !search || d.toLowerCase().includes(search));
+
+                        if (depts.length > 0) {
+                            grid.innerHTML = depts.map(d => {
+                                const empsInDept = store.employees.filter(emp => (emp.department || '').toLowerCase() === d.toLowerCase());
+                                const activeCount = empsInDept.filter(emp => emp.status === 'active').length;
+                                const manager = empsInDept.find(emp => (emp.role || '').toLowerCase().includes('lead') || (emp.role || '').toLowerCase().includes('director') || (emp.role || '').toLowerCase().includes('manager')) || empsInDept[0];
+                                const deptKey = d.toLowerCase().replace(/\s+/g, '-');
+                                
+                                return `
+                                    <div class="stat-card" data-testid="dept-card-${escapeHtml(deptKey)}" aria-label="${escapeHtml(d)} Department" style="display: flex; flex-direction: column; justify-content: space-between; min-height: 180px;">
+                                        <div>
+                                            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                                <h3 style="font-size: 1.1rem; color: var(--text-main); font-weight: 700;">${escapeHtml(d)}</h3>
+                                                <span class="badge ${activeCount > 0 ? 'success' : 'warning'}">${activeCount} Active</span>
+                                            </div>
+                                            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.75rem;">
+                                                Lead: <strong>${escapeHtml(manager ? manager.name : 'Unassigned')}</strong>
+                                            </p>
+                                        </div>
+                                        <div style="border-top: 1px solid var(--border); padding-top: 0.75rem; display: flex; justify-content: space-between; align-items: center;">
+                                            <span style="font-size: 0.8rem; color: var(--text-muted);">Total Team: ${empsInDept.length}</span>
+                                            <button class="btn-secondary btn-sm btn-filter-dept" data-dept="${escapeHtml(d)}" data-testid="btn-dept-${escapeHtml(deptKey)}" aria-label="View Members of ${escapeHtml(d)} Department" style="font-size: 0.75rem; padding: 0.2rem 0.5rem;">View Members</button>
+                                        </div>
+                                    </div>
+                                `;
+                            }).join('');
+
+                            grid.querySelectorAll('.btn-filter-dept').forEach(btn => {
+                                btn.addEventListener('click', (ev) => {
+                                    const dept = ev.currentTarget.getAttribute('data-dept');
+                                    window.currentSearchTerm = dept;
+                                    switchView('employees');
+                                });
+                            });
+                        } else {
+                            grid.innerHTML = '<div style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 2rem;">No departments match the search filter.</div>';
+                        }
+                    }
+                });
+            }
+
             document.querySelectorAll('.btn-filter-dept').forEach(btn => {
                 btn.addEventListener('click', (e) => {
                     const dept = e.currentTarget.getAttribute('data-dept');
