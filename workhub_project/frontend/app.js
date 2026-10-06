@@ -414,8 +414,11 @@ document.addEventListener('DOMContentLoaded', async () => {
         return `
             <div class="card-header">
                 <h2>Employee Directory (${store.employees.length} Total)</h2>
-                <div style="display: flex; gap: 1rem;">
-                    <input type="text" id="emp-search" data-testid="emp-search-input" value="${escapeHtml(window.currentSearchTerm || '')}" placeholder="Search employees by name, ID, role..." aria-label="Search employees by name, ID, or role" style="padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px; min-width: 250px;">
+                <div style="display: flex; gap: 1rem; align-items: center;">
+                    <div class="inner-search-box">
+                        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                        <input type="text" id="emp-search" name="emp-search" class="inner-search-input" data-testid="emp-search-input" value="${escapeHtml(window.currentSearchTerm || '')}" placeholder="Search employees by name, ID, role..." aria-label="Search employees by name, ID, or role" autocomplete="off">
+                    </div>
                     <button class="btn-primary" id="btn-add-employee" data-testid="btn-add-employee" aria-label="Add New Employee"><i class="fa-solid fa-user-plus" aria-hidden="true"></i> Add Employee</button>
                 </div>
             </div>
@@ -565,7 +568,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             <div class="card-header">
                 <h2>Expense Management (${filteredExpenses.length} Total)</h2>
                 <div style="display: flex; gap: 0.75rem; align-items: center;">
-                    <input type="text" id="exp-search" data-testid="exp-search-input" value="${escapeHtml(window.currentExpenseSearchTerm || '')}" placeholder="Search expenses by employee, category, ID..." aria-label="Search expenses by employee, category, or ID" style="padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px; min-width: 250px;">
+                    <div class="inner-search-box">
+                        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                        <input type="text" id="exp-search" name="exp-search" class="inner-search-input" data-testid="exp-search-input" value="${escapeHtml(window.currentExpenseSearchTerm || '')}" placeholder="Search expenses by employee, category, ID..." aria-label="Search expenses by employee, category, or ID" autocomplete="off">
+                    </div>
                     <button class="btn-primary" id="btn-add-expense" data-testid="btn-add-expense" aria-label="Add New Expense"><i class="fa-solid fa-plus" aria-hidden="true"></i> Add Expense</button>
                     <button class="btn-secondary" id="btn-filter-expenses" data-testid="btn-filter-expenses" aria-label="Filter Expenses by Status"><i class="fa-solid fa-filter" aria-hidden="true"></i> Filter (${filterVal.toUpperCase()})</button>
                 </div>
@@ -623,7 +629,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             <div class="card-header">
                 <h2>Leave Requests (${filteredLeaves.length} Total)</h2>
                 <div style="display: flex; gap: 0.75rem; align-items: center;">
-                    <input type="text" id="leave-search" data-testid="leave-search-input" value="${escapeHtml(window.currentLeaveSearchTerm || '')}" placeholder="Search leaves by employee, type, ID..." aria-label="Search leaves by employee, type, or ID" style="padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px; min-width: 250px;">
+                    <div class="inner-search-box">
+                        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                        <input type="text" id="leave-search" name="leave-search" class="inner-search-input" data-testid="leave-search-input" value="${escapeHtml(window.currentLeaveSearchTerm || '')}" placeholder="Search leaves by employee, type, ID..." aria-label="Search leaves by employee, type, or ID" autocomplete="off">
+                    </div>
                     <button class="btn-primary" id="btn-add-leave" data-testid="btn-add-leave" aria-label="Request Leave"><i class="fa-solid fa-plus" aria-hidden="true"></i> Request Leave</button>
                     <button class="btn-secondary" id="btn-view-calendar" data-testid="btn-view-calendar" aria-label="View Leave Calendar"><i class="fa-solid fa-calendar" aria-hidden="true"></i> View Calendar</button>
                 </div>
@@ -715,7 +724,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             <div class="card-header">
                 <h2>HR Tasks <span class="badge ${openTasks > 0 ? 'danger' : 'primary'}" style="margin-left: 0.5rem; font-size: 0.8rem;">${openTasks} Open</span></h2>
                 <div style="display: flex; gap: 0.75rem; align-items: center;">
-                    <input type="text" id="task-search" data-testid="task-search-input" value="${escapeHtml(window.currentTaskSearchTerm || '')}" placeholder="Search tasks by title, assignee, ID..." aria-label="Search tasks by title, assignee, or ID" style="padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px; min-width: 250px;">
+                    <div class="inner-search-box">
+                        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                        <input type="text" id="task-search" name="task-search" class="inner-search-input" data-testid="task-search-input" value="${escapeHtml(window.currentTaskSearchTerm || '')}" placeholder="Search tasks by title, assignee, ID..." aria-label="Search tasks by title, assignee, or ID" autocomplete="off">
+                    </div>
                     <button class="btn-primary" id="btn-new-task" data-testid="btn-new-task" aria-label="Create New HR Task"><i class="fa-solid fa-plus" aria-hidden="true"></i> New Task</button>
                 </div>
             </div>
@@ -767,7 +779,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             <div class="card-header">
                 <h2>Admin Inbox (${filteredEmails.length} Messages)</h2>
                 <div style="display: flex; gap: 0.75rem; align-items: center;">
-                    <input type="text" id="email-search" data-testid="email-search-input" value="${escapeHtml(window.currentEmailSearchTerm || '')}" placeholder="Search emails by sender, subject, body..." aria-label="Search emails by sender, subject, or body" style="padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px; min-width: 250px;">
+                    <div class="inner-search-box">
+                        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                        <input type="text" id="email-search" name="email-search" class="inner-search-input" data-testid="email-search-input" value="${escapeHtml(window.currentEmailSearchTerm || '')}" placeholder="Search emails by sender, subject, body..." aria-label="Search emails by sender, subject, or body" autocomplete="off">
+                    </div>
                     <button class="btn-primary" id="btn-compose-email" data-testid="btn-compose-email" aria-label="Compose New Email"><i class="fa-solid fa-pen" aria-hidden="true"></i> Compose</button>
                 </div>
             </div>
@@ -822,7 +837,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             <div class="card-header">
                 <h2>Document Center (${filteredDocs.length} Total)</h2>
                 <div style="display: flex; gap: 0.75rem; align-items: center;">
-                    <input type="text" id="doc-search" data-testid="doc-search-input" value="${escapeHtml(window.currentDocSearchTerm || '')}" placeholder="Search documents by name, type, related to..." aria-label="Search documents by name, type, or related to" style="padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px; min-width: 250px;">
+                    <div class="inner-search-box">
+                        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                        <input type="text" id="doc-search" name="doc-search" class="inner-search-input" data-testid="doc-search-input" value="${escapeHtml(window.currentDocSearchTerm || '')}" placeholder="Search documents by name, type, related to..." aria-label="Search documents by name, type, or related to" autocomplete="off">
+                    </div>
                     <button class="btn-primary" id="btn-upload-doc" data-testid="btn-upload-doc" aria-label="Upload or Create Document"><i class="fa-solid fa-upload" aria-hidden="true"></i> Upload / Create Document</button>
                 </div>
             </div>
@@ -877,7 +895,10 @@ document.addEventListener('DOMContentLoaded', async () => {
             <div class="card-header">
                 <h2>Company Departments</h2>
                 <div style="display: flex; gap: 0.75rem; align-items: center;">
-                    <input type="text" id="dept-search" data-testid="dept-search-input" value="${escapeHtml(window.currentDeptSearchTerm || '')}" placeholder="Search departments..." aria-label="Search departments" style="padding: 0.5rem; border: 1px solid var(--border); border-radius: 4px; min-width: 250px;">
+                    <div class="inner-search-box">
+                        <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+                        <input type="text" id="dept-search" name="dept-search" class="inner-search-input" data-testid="dept-search-input" value="${escapeHtml(window.currentDeptSearchTerm || '')}" placeholder="Search departments..." aria-label="Search departments" autocomplete="off">
+                    </div>
                     <span class="badge primary">${depts.length} Total Departments</span>
                 </div>
             </div>
