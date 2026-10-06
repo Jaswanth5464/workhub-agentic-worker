@@ -714,29 +714,33 @@ Open your browser at: **`http://localhost:3002/`**
 
 ## 🧪 Ready-To-Run Benchmark Tasks
 
-Copy and paste any of the following tasks into the task box at `http://localhost:3002/`:
+You can copy and paste any of the following benchmark tasks directly into the AI Task Worker web console (`http://localhost:3002/`) or run via the command line.
 
-### 📋 Benchmark 1: Employee Onboarding & Auto-ID Generation
-```text
-Create a new full-time employee named "Elena Rostova" in the "Engineering" department with role "Senior AI Engineer", email "elena.rostova@workhub.local", joined date "2026-10-06", and manager "Admin". Verify that the employee was inserted with a valid sequential ID.
-```
-- **What it verifies:** Triggers HITL authorization, calls `create_employee`, assigns next sequential `EMP-xxx` ID, and runs a verification `SELECT` query.
+### 🌐 1. Playwright Browser Automation Benchmark Tasks
 
----
+These tasks test full visual web interaction, modal forms, dropdown selects, and dynamic single-page application (SPA) routing on WorkHub Web (`http://localhost:3000`):
 
-### 💰 Benchmark 2: Expense Claim Audit & Approval
-```text
-Review all pending expense claims. Identify expenses submitted by active employees that belong to the "Travel" or "Software" category and are under ₹5,000. Approve the eligible claims by updating their status to "approved" and provide a financial summary.
-```
-- **What it verifies:** Cross-joins `expenses` and `employees`, prompts for human authorization, commits the update, and displays live evidence in the `VERIFY` drawer.
+| # | Benchmark Task Name | Prompt / Instructions (Copy-Paste Ready) | Tested Web Capabilities | Verification Target |
+|:---:|:---|:---|:---|:---|
+| **B1** | **Cross-Department Employee Onboarding** | `Open http://localhost:3000/index.html. Go to the Employees section and add a new employee named "Marcus Vance" with email "marcus.vance@company.internal", Department "Engineering", Role "Senior Systems Architect", and Salary "145000". Then navigate to the Tasks section and assign a new High Priority task to "Marcus Vance" titled "Setup Cloud Architecture & IAM Roles" with due date "2026-10-30".` | Multi-module navigation, modal forms, dropdown selects, and cross-tab dependency creation. | Profile badge in Employees table + Assigned task in Tasks table. |
+| **B2** | **Financial Governance & Expense Approval** | `Open http://localhost:3000/index.html. Navigate to the Expenses module, find all pending expenses with an amount greater than ₹5,000, and approve them. If any expense has a missing receipt or category marked as "Other", ask for operator confirmation before approving.` | Table data extraction, conditional filtering, interactive confirmation dialogs, and row status changes. | Verified status `approved` in Expenses table. |
+| **B3** | **Leave Request & Task Rebalancing** | `Open http://localhost:3000/index.html. Go to the Leave Management tab. Check for any pending vacation or sick leave requests. Approve pending requests, and for each approved employee, check if they have any active high-priority tasks in the Tasks section that need reassignment.` | Cross-table correlation, approval buttons, task filter dropdowns, and status transitions. | Approved leave status + Reassigned tasks. |
+| **B4** | **Employee Role & Salary Promotion** | `Open http://localhost:3000/index.html. In the Employees module, search for "Jane Smith". Open her profile, update her role to "Principal Engineering Manager" and increase her salary by 10%. Verify that the updated salary displays correctly on her profile badge.` | Search input filtering, row detail modal, numerical computation, and DOM text assertion. | Updated role & salary in DOM element. |
+| **B5** | **Batch Task Reorganization & Retrospective** | `Open http://localhost:3000/index.html. Go to Tasks, filter by "In Progress", and mark all overdue tasks as "Completed". Then create a new summary task for the Engineering department titled "Sprint Retrospective & Delivery" with Priority "Medium".` | Filter controls, batch item status toggles, modal task creation, and DOM verification. | Completed task statuses + New summary task. |
 
 ---
 
-### 🔒 Benchmark 3: Inactive Employee Security Cleanup
-```text
-Query all employees marked as "inactive" or "terminated". Check if any of these inactive employees currently have open tasks assigned to them. Reassign all open tasks from inactive employees to "Admin".
-```
-- **What it verifies:** Multi-step reasoning across `employees` and `tasks` tables with batch reassignment approval.
+### 🗄️ 2. Non-Browser / Direct Database & API Benchmark Tasks
+
+These tasks test high-speed direct SQL reasoning in `mode=ro`, financial Human-in-the-Loop (HITL) gatekeeping, sequential auto-ID generation, and multi-table audits against SQLite (`company_database.sqlite`):
+
+| # | Benchmark Task Name | Prompt / Instructions (Copy-Paste Ready) | Tested Agent & Database Capabilities | Verification Target |
+|:---:|:---|:---|:---|:---|
+| **D1** | **Employee Onboarding with Sequential Auto-ID** | `Create a new full-time employee named "Elena Rostova" in the "Engineering" department with role "Senior AI Engineer", email "elena.rostova@workhub.local", joined date "2026-10-06", and manager "Admin". Verify that the employee was inserted with a valid sequential ID.` | Human-in-the-Loop write elevation, sequential zero-null `_generate_next_id()`, and SQLite insertion. | New row with sequential ID (`EMP-xxx`) in `employees` table. |
+| **D2** | **Multi-Table Expense Claim Audit & Approval** | `Review all pending expense claims. Identify expenses submitted by active employees that belong to the "Travel" or "Software" category and are under ₹5,000. Approve the eligible claims by updating their status to "approved" and provide a financial summary.` | Cross-table relational joins (`expenses` $\bowtie$ `employees`), threshold filtering, HITL write authorization, and audit logging. | Status updated to `approved` in `expenses` + Entry in `audit_logs`. |
+| **D3** | **Inactive Employee Security & Task Reassignment** | `Query all employees marked as "inactive" or "terminated". Check if any of these inactive employees currently have open tasks assigned to them. Reassign all open tasks from inactive employees to "Admin".` | Relational search in `mode=ro`, multi-step dependency analysis, batch `UPDATE` transactions, and state check. | 0 open tasks assigned to inactive employees in `tasks`. |
+| **D4** | **Company Leave Calendar Overlap Audit** | `Inspect all approved leave requests for the Engineering department scheduled between 2026-10-10 and 2026-10-20. Identify if more than 2 senior engineers are on leave simultaneously and summarize staffing impact.` | Complex date-range filtering, department joins, policy compliance evaluation, and structured reporting. | Complete staffing risk assessment report. |
+| **D5** | **Corporate Document & HR Travel Policy Lookup** | `Read the corporate travel policy document DOC-001. Extract the daily per diem and local commute reimbursement limits. Then verify if recent travel claims submitted this month adhere to these policy limits.` | Document inspection tool, policy text analysis, SQL query cross-referencing, and compliance auditing. | Policy compliance summary report. |
 
 ---
 
