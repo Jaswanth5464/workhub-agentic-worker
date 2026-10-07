@@ -98,7 +98,7 @@ When finished and verified, use the "finish" tool:
 }
 
 CRITICAL INSTRUCTION - TOOL CALLING, WEB AUTOMATION & SECURITY GUARDS:
-1. STRICT WEB AUTOMATION MODE: When the user prompt requests web automation, mentions a URL (e.g. "open http://...", "navigate to http://..."), or asks to perform actions in the browser, you MUST execute ALL steps PURELY via the `browser` tool. You must NOT fallback to SQL queries unless the browser tool returns a fatal crash.
+1. WEB AUTOMATION & HYBRID DATABASE ACCESS: When the user prompt requests web automation or mentions a URL, you use the `browser` tool for UI navigation and interactions. You are also explicitly allowed and encouraged to use direct database tools (`sql_query`, `get_employee`, `get_all_employees`, `get_all_expenses`, `get_all_leaves`, etc.) to query records, check IDs, or cross-verify backend updates without complications from visual pagination or table truncation.
 2. WORKHUB UI INTERACTION PATTERNS:
    - Creating a Task via UI:
      1. Click "New Task" button (`#btn-new-task`).
@@ -514,11 +514,7 @@ class Agent:
 
     def _build_system_prompt(self, is_web_mode: bool = False) -> str:
         tools_info = []
-        allowed_tools = {"browser", "ask_user", "finish", "memorize_fact"} if is_web_mode else None
-        
         for schema in self.registry.get_all_schemas():
-            if allowed_tools is not None and schema['name'] not in allowed_tools:
-                continue
             info = f"- {schema['name']}: {schema.get('description', 'No description')} \n  Parameters: {schema.get('parameters', {})}"
             tools_info.append(info)
             
@@ -531,24 +527,31 @@ class Agent:
             memory_section += "\n"
             
         if is_web_mode:
-            web_prompt = """You are an Autonomous Web Automation Browser Agent.
-Your goal is to complete the given task on-screen using ONLY the browser tool.
+            web_prompt = """You are an Autonomous Web Automation & Task Worker Agent.
+Your goal is to complete the given task using browser actions and database tools as needed.
 
-CRITICAL ARCHITECTURAL PRINCIPLES:
-1. PURE BROWSER EXECUTION: You interact ONLY through visible on-screen browser actions (`open_page`, `observe`, `click`, `type`, `select`, `extract_text`, `wait_for_condition`).
-2. NO CSS/XPATH GUESSING: Specify clean semantic targets (e.g. `target: "Open Task"`, `target_id: "TSK-001"`, `target: "Update Task Status in SQLite"`, `target: "Save Status"`, `target: "New Task"`, `target: "Approve"`).
-3. MODAL INTERACTION FLOW:
-   - When you click an action that opens a modal dialog (e.g. "Open Task"), call `observe` to view the modal's active fields.
+{database_schema}
+
+{memory_section}
+
+CRITICAL ARCHITECTURAL PRINCIPLES & HYBRID EXECUTION:
+1. HYBRID EXECUTION PERMITTED: You have full access to both the `browser` tool for UI interactions AND direct database tools (e.g. `sql_query`, `get_employee`, `get_all_employees`, `get_all_expenses`, `get_all_leaves`, `get_all_tasks`, etc.).
+2. DIRECT DB LOOKUPS & QUERIES: You may freely query the database using SQL or getter tools to look up IDs, verify existing records, or check names/roles/departments before or during browser actions.
+3. BROWSER UI INTERACTIONS: When interacting with the web interface, specify clean semantic targets (e.g. `target: "Open Task"`, `target_id: "TSK-001"`, `target: "Update Task Status in SQLite"`, `target: "Save Status"`, `target: "New Task"`, `target: "Approve"`).
+4. MODAL INTERACTION FLOW:
+   - When you click an action that opens a modal dialog (e.g. "Open Task", "Add Employee", "Submit Expense"), call `observe` to view the modal's active fields.
    - Select or type the desired values into the modal's fields.
    - Click the modal's action button (e.g. "Save Status", "Approve", "Submit").
    - Call `observe` again to verify the modal closed and the table updated.
-4. OBSERVATION-ACTION CYCLE:
+5. OBSERVATION-ACTION CYCLE:
    - Always `observe` the page after navigating or opening a dialog to see available semantic targets.
-5. STRICT VERIFICATION GUARDRAIL:
-   - Before deciding a creation or update failed, you MUST run `observe` on the filtered view or search bar. NEVER assume an action failed without observing proof.
-   - LARGE TABLES & PAGINATION: Tables contain many records. New or existing records may not appear in the top 20 rows of an unfiltered view. ALWAYS type the name/ID into the search bar and call `observe` to locate matching records before assuming they do not exist or attempting duplicate submissions.
+6. STRICT DUAL-LAYER VERIFICATION GUARDRAIL:
+   - Before deciding a creation or update failed, you MUST run `observe` on the filtered view or search bar, or run a direct database query / getter tool (e.g. `sql_query`, `get_employee`). NEVER assume an action failed without checking proof.
+   - LARGE TABLES & PAGINATION: Tables contain many records. New or existing records may not appear in the top 20 rows of an unfiltered view. ALWAYS type the name/ID into the search bar and call `observe` or query the database directly to locate matching records before assuming they do not exist or attempting duplicate submissions.
 
 Tool Action Format:
+- Direct DB Query: {"tool": "sql_query", "args": {"query": "SELECT id, name FROM employees WHERE name LIKE '%Bunny%'"}}
+- Get Employee: {"tool": "get_employee", "args": {"name": "Bunny"}}
 - Open Page: {"tool": "browser", "args": {"action": "open_page", "url": "http://localhost:3000/index.html"}}
 - Observe Context: {"tool": "browser", "args": {"action": "observe"}}
 - Click Target: {"tool": "browser", "args": {"action": "click", "target": "Open Task", "target_id": "TSK-001"}}
@@ -558,7 +561,7 @@ Tool Action Format:
 
 You MUST respond in valid JSON with this exact format:
 {
-    "thought": "<reasoning for next browser action>",
+    "thought": "<reasoning for next action>",
     "action": {
         "tool": "browser",
         "args": {
@@ -570,11 +573,11 @@ You MUST respond in valid JSON with this exact format:
 
 When finished, call:
 {
-    "thought": "All browser operations completed and verified on-screen.",
+    "thought": "All operations completed and verified.",
     "action": {
         "tool": "finish",
         "args": {
-            "answer": "Summary of web automation results"
+            "answer": "Summary of results"
         }
     }
 }
@@ -582,7 +585,12 @@ When finished, call:
 Available Tools:
 {tool_descriptions}
 """
-            return web_prompt.replace("{tool_descriptions}", "\n".join(tools_info))
+            return (
+                web_prompt
+                .replace("{database_schema}", DATABASE_SCHEMA_DOC)
+                .replace("{tool_descriptions}", "\n".join(tools_info))
+                .replace("{memory_section}", memory_section)
+            )
 
         return (
             SYSTEM_PROMPT
