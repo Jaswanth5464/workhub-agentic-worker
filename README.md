@@ -10,6 +10,22 @@
   <img src="https://img.shields.io/badge/Database-SQLite%20(Real%20Mutations)-f59e0b?style=for-the-badge&logo=sqlite&logoColor=white" alt="SQLite Real DB" />
 </p>
 
+---
+
+<div align="center">
+
+# 🎬 📺 LIVE VIDEO DEMONSTRATION WALKTHROUGH
+
+## 🔴 **[CLICK HERE TO WATCH FULL DEMO VIDEO (GOOGLE DRIVE)](https://drive.google.com/file/d/1wqdctBjnvtKDf_hgJaQvRnQg8i1XrqfU/view?usp=sharing)** 🔴
+
+### 🔗 **VIDEO LINK:** [https://drive.google.com/file/d/1wqdctBjnvtKDf_hgJaQvRnQg8i1XrqfU/view?usp=sharing](https://drive.google.com/file/d/1wqdctBjnvtKDf_hgJaQvRnQg8i1XrqfU/view?usp=sharing)
+
+*A complete live demonstration of the autonomous AI worker executing multi-step web browser tasks, handling real-time human approvals, recovering from edge cases, and deterministically verifying database state changes.*
+
+</div>
+
+---
+
 <p align="center">
   <strong>A production-ready autonomous AI worker combining advanced 4-Facet Loop Engineering with full-fidelity Playwright web browser automation. The agent autonomously reasons over complex goals, interacts dynamically with web interfaces, executes real database mutations, enforces human authorization guardrails, and deterministically verifies outcomes against live system state.</strong>
 </p>
@@ -30,7 +46,7 @@ To help evaluators quickly verify every dimension required by the **CentrAlign A
 | 👤 **5. Human-In-The-Loop (HITL)** | • Evaluator Q&A: Human Authorization (Q5)<br/>• Security Guard & Strict `mode=ro` Read-Only Enforcement<br/>• Non-Blocking Realtime SSE Confirmation Cards | [Jump ➔](#q5-human-in-the-loop--when-does-the-agent-ask-for-approval-vs-proceeding-alone) |
 | 🌐 **6. Generalization & Architecture** | • Evaluator Q&A: Domain-Agnostic Extensibility (Q6)<br/>• Complete Dual-Mode System Architecture Flowchart<br/>• WorkHub 7-Domain Enterprise Simulation Environment | [Jump ➔](#q6-generalization--how-easily-can-this-system-handle-new-unseen-tasks) |
 | 🚀 **7. Setup, Benchmarks & Testing** | • Quick Start & One-Click Windows Launcher (`Run_Project.bat`)<br/>• 10 Copy-Paste Ready Benchmark Tasks (Browser + Direct DB)<br/>• 181/181 Verified Unit & Scenario Test Matrix (100% Pass Rate) | [Jump ➔](#-quick-start--one-click-run) |
-| 📋 **8. Submission Deliverables** | • Assumptions Made While Building Solution<br/>• Demo Walkthrough & 3-Step Live Reproduction Guide<br/>• Known Limitations & Evolution to Production (Q7)<br/>• CentrAlign AI Submission Checklist Compliance Matrix | [Jump ➔](#-assumptions-made-while-building-the-solution) |
+| 📋 **8. Submission Deliverables** | • 🎬 **[Watch Live Video Demo (Google Drive)](https://drive.google.com/file/d/1wqdctBjnvtKDf_hgJaQvRnQg8i1XrqfU/view?usp=sharing)**<br/>• Assumptions Made While Building Solution<br/>• Demo Walkthrough & 3-Step Live Reproduction Guide<br/>• Known Limitations & Evolution to Production (Q7)<br/>• CentrAlign AI Submission Checklist Compliance Matrix | [Jump ➔](#-demo-walkthrough--evaluation-reproduction-guide) |
 
 ---
 
@@ -52,7 +68,7 @@ To help evaluators quickly verify every dimension required by the **CentrAlign A
 14. [🔍 Live Verification & Evaluator Evidence](#-live-verification--evaluator-evidence)
 15. [🧪 Comprehensive Unit Test Suites & Verification Results](#-comprehensive-unit-test-suites--verification-results)
 16. [📋 Assumptions Made While Building the Solution](#-assumptions-made-while-building-the-solution)
-17. [🎥 Demo Walkthrough & Evaluation Reproduction Guide](#-demo-walkthrough--evaluation-reproduction-guide)
+17. [🎥 Demo Walkthrough & Evaluation Reproduction Guide (With Live Video Demo)](#-demo-walkthrough--evaluation-reproduction-guide)
 18. [📑 CentrAlign AI Submission Checklist Compliance Matrix](#-centralign-ai-submission-checklist-compliance-matrix)
 19. [🔮 Known Limitations & Future Roadmap](#-known-limitations--future-roadmap)
 20. [🛠️ Tech Stack & Provider Fallback Chain](#-tech-stack--provider-fallback-chain)
@@ -933,6 +949,17 @@ To build a focused, reliable, and enterprise-relevant prototype, the following d
 
 ## 🎥 Demo Walkthrough & Evaluation Reproduction Guide
 
+### 📺 Watch Full Video Demonstration:
+<div align="center" style="margin: 15px 0;">
+
+# 🎬 🔴 [WATCH FULL LIVE DEMO ON GOOGLE DRIVE](https://drive.google.com/file/d/1wqdctBjnvtKDf_hgJaQvRnQg8i1XrqfU/view?usp=sharing) 🔴
+
+### 🔗 Direct Video URL: **[https://drive.google.com/file/d/1wqdctBjnvtKDf_hgJaQvRnQg8i1XrqfU/view?usp=sharing](https://drive.google.com/file/d/1wqdctBjnvtKDf_hgJaQvRnQg8i1XrqfU/view?usp=sharing)**
+
+</div>
+
+---
+
 ### Quick 3-Step Live Reproduction for Evaluators:
 
 1. **Launch Services:**
@@ -961,6 +988,7 @@ To build a focused, reliable, and enterprise-relevant prototype, the following d
 | CentrAlign AI Requirement | Status | Where to Find in this Repository / README |
 |:---|:---:|:---|
 | **GitHub Repository Link** | ✅ Complete | [GitHub: Jaswanth5464/workhub-agentic-worker](https://github.com/Jaswanth5464/workhub-agentic-worker.git) |
+| **Video Demonstration Link** | ✅ Complete | [🎬 Google Drive Demo Video](https://drive.google.com/file/d/1wqdctBjnvtKDf_hgJaQvRnQg8i1XrqfU/view?usp=sharing) |
 | **Setup & Run Instructions** | ✅ Complete | [🚀 Quick Start & One-Click Run](#-quick-start--one-click-run) |
 | **Architecture Explanation** | ✅ Complete | [🏗️ Complete System Architecture](#-complete-system-architecture) & [🔄 4-Facet Execution Loop](#-detailed-4-facet-execution-loop-loop-engineering) |
 | **Technical & Design Decisions** | ✅ Complete | [💡 System Novelty & Special Capabilities](#-system-novelty--what-makes-our-solution-special) & [💡 5 Unique Strategies](#-our-5-unique-engineering-strategies) |
