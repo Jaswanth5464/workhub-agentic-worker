@@ -357,9 +357,8 @@ class BrowserTool(Tool):
                         <span style="display:inline-block; width:12px; height:12px; border-radius:50%; background:${theme.border}; box-shadow:0 0 10px ${theme.border}; animation:aiPulse 0.6s infinite alternate;"></span>
                         <strong style="font-size:14px; letter-spacing:0.5px; color:#F3F4F6;">🤖 WORKHUB AUTONOMOUS AI AGENT</strong>
                     </div>
-                    <div style="background:${theme.bg}; color:${theme.text}; font-size:13px; font-weight:700; padding:5px 14px; border-radius:20px; box-shadow:0 2px 10px rgba(0,0,0,0.3); display:flex; align-items:center; gap:6px;">
-                        <span>${theme.icon} AI ${actionType.toUpperCase()}:</span>
-                        <span style="text-decoration:underline;">"${labelText || 'Target'}"</span>
+                    <div style="font-size:12px; font-weight:600; color:#9CA3AF; letter-spacing:0.5px;">
+                        ACTIVE AUTOMATION SESSION
                     </div>
                 `;
             }
