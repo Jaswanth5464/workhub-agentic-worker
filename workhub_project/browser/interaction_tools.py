@@ -226,6 +226,15 @@ class InteractionTools:
         if not loc:
             return {"success": False, "error": f"Input field '{target}' not found."}
 
+        # Auto-fallback: Check if element is a SELECT dropdown
+        try:
+            tag_name = await loc.evaluate("e => e.tagName.toUpperCase()")
+        except Exception:
+            tag_name = "INPUT"
+
+        if tag_name == "SELECT":
+            return await self.select_option(target, str(value), page, session_id=session_id)
+
         # Show visual amber gold ring & typing badge
         await self._show_visual_indicator(page, loc, action_type="type", label_text=f"{target} → '{value}'")
 
@@ -269,12 +278,21 @@ class InteractionTools:
         if not loc:
             return {"success": False, "error": f"Dropdown '{target}' not found."}
 
+        # Auto-fallback: Check if element is an INPUT or TEXTAREA (not a SELECT)
+        try:
+            tag_name = await loc.evaluate("e => e.tagName.toUpperCase()")
+        except Exception:
+            tag_name = "SELECT"
+
+        if tag_name in ("INPUT", "TEXTAREA"):
+            return await self.fill_input(target, value, page, session_id=session_id)
+
         # Show visual emerald green ring & select badge
         await self._show_visual_indicator(page, loc, action_type="select", label_text=f"{target} → '{value}'")
 
         options_resolver_js = """
         (selectEl, searchVal) => {
-            if (!selectEl || selectEl.tagName !== 'SELECT') return { success: false, error: 'Target is not a select element', options: [] };
+            if (!selectEl || selectEl.tagName !== 'SELECT') return { success: false, is_input: true, error: 'Target is not a select element', options: [] };
             const lower = String(searchVal).toLowerCase().trim();
             const opts = Array.from(selectEl.options).map(o => ({
                 value: o.value,
@@ -314,6 +332,10 @@ class InteractionTools:
             res = await loc.evaluate(options_resolver_js, str(value).strip())
         except Exception as e:
             res = {"success": False, "error": str(e), "options": []}
+
+        if res.get("is_input"):
+            await self._hide_visual_indicator(page)
+            return await self.fill_input(target, value, page, session_id=session_id)
 
         await self._hide_visual_indicator(page)
 

@@ -861,6 +861,15 @@ class BrowserTool(Tool):
                     if not el:
                         raise PlaywrightTimeoutError(f"Could not locate input target: '{target}'")
 
+                    # Auto-fallback: Check if element is a SELECT dropdown
+                    try:
+                        tag_name = await el.evaluate("e => e.tagName.toUpperCase()")
+                    except Exception:
+                        tag_name = "INPUT"
+
+                    if tag_name == "SELECT":
+                        return await self.execute(action="select", target=target, target_id=target_id, value=value, run_id=run_id)
+
                     # Highlight input with animated AI typing badge
                     await self._show_visual_indicator(page, el, action_type="type", label_text=f"{target} → '{value}'")
 
@@ -887,6 +896,15 @@ class BrowserTool(Tool):
                     if not el:
                         raise PlaywrightTimeoutError(f"Could not locate dropdown select target: '{target}'")
 
+                    # Auto-fallback: Check if element is an INPUT or TEXTAREA (not a SELECT)
+                    try:
+                        tag_name = await el.evaluate("e => e.tagName.toUpperCase()")
+                    except Exception:
+                        tag_name = "SELECT"
+
+                    if tag_name in ("INPUT", "TEXTAREA"):
+                        return await self.execute(action="type", target=target, target_id=target_id, value=value, run_id=run_id)
+
                     # Highlight select with animated AI dropdown badge
                     await self._show_visual_indicator(page, el, action_type="select", label_text=f"{target} → '{value}'")
 
@@ -896,7 +914,7 @@ class BrowserTool(Tool):
                     # Comprehensive multi-strategy JS option resolver
                     options_resolver_js = """
                     (selectEl, searchVal) => {
-                        if (!selectEl || selectEl.tagName !== 'SELECT') return { success: false, error: 'Target is not a select element', options: [] };
+                        if (!selectEl || selectEl.tagName !== 'SELECT') return { success: false, is_input: true, error: 'Target is not a select element', options: [] };
                         const lower = String(searchVal).toLowerCase().trim();
                         const opts = Array.from(selectEl.options).map(o => ({
                             value: o.value,
@@ -942,6 +960,11 @@ class BrowserTool(Tool):
                         res = await el.evaluate(options_resolver_js, val_str)
                     except Exception as e:
                         res = {"success": False, "error": str(e), "options": []}
+
+                    if res.get("is_input"):
+                        # Target is an input, auto-coerce to type
+                        await self._hide_visual_indicator(page)
+                        return await self.execute(action="type", target=target, target_id=target_id, value=value, run_id=run_id)
 
                     await self._hide_visual_indicator(page)
 

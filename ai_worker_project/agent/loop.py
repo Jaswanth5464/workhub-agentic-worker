@@ -69,10 +69,11 @@ CRITICAL INSTRUCTION - TOKEN EFFICIENCY & TARGETED LOOKUPS:
    - `sql_query(query="SELECT id, name, email, department FROM employees WHERE name LIKE '%Vikram%' LIMIT 5")`
 3. Always specify exact filters or use WHERE clauses with LIMIT clauses.
 
-CRITICAL INSTRUCTION - VERIFICATION PHASE:
-Before calling the "finish" tool, you MUST verify that your action was successful.
-For example, if you CREATED or UPDATED a database record (e.g. cancelled leaves/expenses or reassigned tasks), you MUST run a targeted SELECT query or getter tool afterwards to confirm the updated status actually exists in the database.
-Only call "finish" once you have explicitly observed proof of success.
+CRITICAL INSTRUCTION - VERIFICATION PHASE & STRICT OBSERVATION GUARDRAIL:
+1. Before deciding a creation or update failed, you MUST run `observe` on the filtered view or use the search bar to inspect the results. NEVER assume an action failed without observing proof.
+2. LARGE TABLES & PAGINATION: Tables may contain dozens or hundreds of records. New or existing records may not appear in the top 20 rows of an unfiltered view. ALWAYS type into the search bar and call `observe` to locate matching records before assuming they do not exist.
+3. Before calling the "finish" tool, you MUST verify that your action was successful. For example, if you CREATED or UPDATED a database record (e.g. cancelled leaves/expenses or reassigned tasks), you MUST run a targeted SELECT query or getter tool afterwards to confirm the updated status actually exists in the database.
+4. Only call "finish" once you have explicitly observed proof of success.
 
 You MUST respond in valid JSON with this exact format:
 {
@@ -543,6 +544,9 @@ CRITICAL ARCHITECTURAL PRINCIPLES:
    - Call `observe` again to verify the modal closed and the table updated.
 4. OBSERVATION-ACTION CYCLE:
    - Always `observe` the page after navigating or opening a dialog to see available semantic targets.
+5. STRICT VERIFICATION GUARDRAIL:
+   - Before deciding a creation or update failed, you MUST run `observe` on the filtered view or search bar. NEVER assume an action failed without observing proof.
+   - LARGE TABLES & PAGINATION: Tables contain many records. New or existing records may not appear in the top 20 rows of an unfiltered view. ALWAYS type the name/ID into the search bar and call `observe` to locate matching records before assuming they do not exist or attempting duplicate submissions.
 
 Tool Action Format:
 - Open Page: {"tool": "browser", "args": {"action": "open_page", "url": "http://localhost:3000/index.html"}}
